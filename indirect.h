@@ -58,6 +58,12 @@ class indirect {
   T& operator*() { return *ptr_; }
 
   const T& operator*() const { return *ptr_; }
+
+  friend void swap(indirect& lhs, indirect& rhs) {
+    using std::swap;
+    swap(lhs.ptr_, rhs.ptr_);
+    swap(lhs.c_, rhs.c_);
+  }
 };
 
 }  // namespace jbcoe
