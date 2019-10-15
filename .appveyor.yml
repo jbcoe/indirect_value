@@ -1,0 +1,14 @@
+image:
+  - Visual Studio 2017
+
+install:
+  - git submodule update --init
+
+clone_folder: c:\projects\indirect
+
+before_build:
+  - cd c:\projects\indirect
+  
+build_script:
+  - python scripts\build.py -t
+
