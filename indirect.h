@@ -2,6 +2,7 @@
 #define JBCOE_CPP_INDIRECT
 
 #include <memory>
+#include <utility>
 
 namespace jbcoe {
 
@@ -18,16 +19,16 @@ class indirect {
  public:
   indirect() = default;
 
-  template <class T>
-  indirect(std::in_place<T>, Ts...&& ts) : c_(std::move(c)) {
-    ptr_ = std::unique_ptr<T, D>(new T(std::forward<Ts>(ts)...) D{});
+  template <class... Ts>
+  indirect(std::in_place_t, Ts&& ...ts) {
+    ptr_ = std::unique_ptr<T, D>(new T(std::forward<Ts>(ts)...), D{});
   }
 
   indirect(T* t, C c = C{}, D d = D{}) : c_(std::move(c)) {
     ptr_ = std::unique_ptr<T, D>(t, std::move(d));
   }
 
-  indirect(const indirect& i) : c_(C{}) {
+  indirect(const indirect& i) {
     if (i.ptr_) { 
       ptr_ = std::unique_ptr<T, D>(i.c_(*i.ptr_), D{});
     }
