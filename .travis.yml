@@ -4,7 +4,7 @@ sudo: false
 notifications:
   email: false
 
-# Use Linux unless specified otherwise
+# Use Linux unless otherwise specified 
 os: linux
 dist: trusty
 
