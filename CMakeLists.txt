@@ -38,7 +38,7 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
     )
 
     FetchContent_GetProperties(catch2)
-    if(NOT googletest_POPULATED)
+    if(NOT googletest_POPULATED) # FIXME(two) Should this be googletest_POPULATED?
         FetchContent_Populate(catch2)
         add_subdirectory(${catch2_SOURCE_DIR} ${catch2_BINARY_DIR})
     endif()
