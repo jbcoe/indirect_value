@@ -45,8 +45,9 @@ class indirect {
   }
 
   indirect& operator = (indirect&& i) {
-    c_ = C(std::move(i.c_));
-    ptr_ = std::move(i.ptr_);
+    c_ = std::exchange(i.c_, C{});
+    ptr_ = std::exchange(i.ptr_, nullptr);
+    return *this;
   }
 
   ~indirect() = default;

@@ -8,7 +8,7 @@ set(CPP_INDIRECT_VALUE_VERSION "0.0.0")
 
 # FIXME(twon) use CMake features checks instead.
 # Needed for `std::in_place_t`.
-set(CMAKE_CXX_STANDARD 17) 
+set(CMAKE_CXX_STANDARD 17)
 
 project(indirect VERSION ${CPP_INDIRECT_VALUE_VERSION})
 
@@ -38,7 +38,7 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
     )
 
     FetchContent_GetProperties(catch2)
-    if(NOT googletest_POPULATED) # FIXME(two) Should this be googletest_POPULATED?
+    if(NOT catch2_POPULATED)
         FetchContent_Populate(catch2)
         add_subdirectory(${catch2_SOURCE_DIR} ${catch2_BINARY_DIR})
     endif()
