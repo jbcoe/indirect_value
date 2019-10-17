@@ -96,14 +96,13 @@ matrix:
            sources:
              - ubuntu-toolchain-r-test
 
-    # GCC 9
-     - env: COMPILER=g++-9 BUILD_TYPE=Debug
-       addons: &gcc9
-         apt:
-           packages: g++-9
-           sources:
-             - ubuntu-toolchain-r-test
-
+     # GCC 9
+     #     - env: COMPILER=g++-9 BUILD_TYPE=Debug
+     #  addons: &gcc9
+     #    apt:
+     #      packages: g++-9
+     #      sources:
+     #        - ubuntu-toolchain-r-test
 
 # Added following instructions from https://docs.travis-ci.com/user/installing-dependencies#Installing-Packages-with-the-APT-Addon
 before_install:
