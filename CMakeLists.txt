@@ -6,10 +6,6 @@ endif()
 
 set(CPP_INDIRECT_VALUE_VERSION "0.0.0")
 
-# FIXME(twon) use CMake features checks instead.
-# Needed for `std::in_place_t`.
-set(CMAKE_CXX_STANDARD 17) 
-
 project(indirect VERSION ${CPP_INDIRECT_VALUE_VERSION})
 
 option(ENABLE_SANITIZERS "Enable Address Sanitizer and Undefined Behaviour Sanitizer if available" OFF)
@@ -27,6 +23,11 @@ target_sources(indirect
         $<INSTALL_INTERFACE:include/indirect.h>
 )
 
+target_compile_features(indirect
+    INTERFACE
+        cxx_std_17
+)
+
 add_library(indirect::indirect ALIAS indirect)
 
 if (${CPP_INDIRECT_IS_SUBPROJECT})
@@ -38,7 +39,7 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
     )
 
     FetchContent_GetProperties(catch2)
-    if(NOT googletest_POPULATED) # FIXME(two) Should this be googletest_POPULATED?
+    if(NOT catch2_POPULATED)
         FetchContent_Populate(catch2)
         add_subdirectory(${catch2_SOURCE_DIR} ${catch2_BINARY_DIR})
     endif()
