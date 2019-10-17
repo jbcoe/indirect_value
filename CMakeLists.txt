@@ -6,10 +6,6 @@ endif()
 
 set(CPP_INDIRECT_VALUE_VERSION "0.0.0")
 
-# FIXME(twon) use CMake features checks instead.
-# Needed for `std::in_place_t`.
-set(CMAKE_CXX_STANDARD 17)
-
 project(indirect VERSION ${CPP_INDIRECT_VALUE_VERSION})
 
 option(ENABLE_SANITIZERS "Enable Address Sanitizer and Undefined Behaviour Sanitizer if available" OFF)
@@ -25,6 +21,11 @@ target_sources(indirect
     INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/indirect.h>
         $<INSTALL_INTERFACE:include/indirect.h>
+)
+
+target_compile_features(indirect
+    INTERFACE
+        cxx_std_17
 )
 
 add_library(indirect::indirect ALIAS indirect)
