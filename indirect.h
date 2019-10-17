@@ -8,7 +8,7 @@ namespace jbcoe {
 
 template <class T>
 struct default_copy {
-  T* operator()(const T& t) { return new T(t); }
+  T* operator()(const T& t) const { return new T(t); }
 };
 
 template <class T, class C = default_copy<T>, class D = std::default_delete<T>>
@@ -42,6 +42,7 @@ class indirect {
     if (i.ptr_) { 
       ptr_ = std::unique_ptr<T, D>(i.c_(*i.ptr_), D{});
     }
+    return *this;
   }
 
   indirect& operator = (indirect&& i) {
