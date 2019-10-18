@@ -14,13 +14,13 @@ TEST_CASE("Defeault construction for indirect", "[constructor.default]")
 
 TEST_CASE("Copy construction for indirect of a primitive type", "[constructor.copy.primitive]")
 {
-    GIVEN("A value initialised indirect value")
+    GIVEN("A value-initialised indirect value")
     {
         constexpr int a_value = 5;
         indirect<int> a{ new int(a_value) };
         REQUIRE(*a == a_value);
 
-        WHEN("Taking a copy of the value initalised value")
+        WHEN("Taking a copy of the value-initialised indirect value")
         {
             indirect<int> copy_of_a{ a };
             THEN("The copy is a deep copy of the orginal value")
@@ -36,13 +36,13 @@ TEST_CASE("Copy construction for indirect of a primitive type", "[constructor.co
 
 TEST_CASE("Copy assignment for indirect of a primative type", "[assignment.copy.primitive]")
 {
-    GIVEN("A value initialised indirect value")
+    GIVEN("A value-initialised indirect value")
     {
         constexpr int a_value = 5;
         indirect<int> a{ new int(a_value) };
         REQUIRE(*a == a_value);
  
-        WHEN("Assigning a copy into a default initalised indirect value")
+        WHEN("Assigning a copy into a default-initalised indirect value")
         {
              indirect<int> b{};
              REQUIRE(b.operator->() == nullptr);
@@ -56,14 +56,14 @@ TEST_CASE("Copy assignment for indirect of a primative type", "[assignment.copy.
                  REQUIRE(b.operator->() != a.operator->());
              }
         }
-        WHEN("Assigning a copy into a value initalised indirect value")
+        WHEN("Assigning a copy into a value-initalised indirect value")
         {
              constexpr int b_value = 10;
              indirect<int> b{ new int(b_value) };
              REQUIRE(*b == b_value);
              //int const * const location_of_b = b.operator->();
 
-             THEN("The assigned too object make a deep copy of the original value without futher unnecessary allocation")
+             THEN("The assigned to object make a deep copy of the original value without futher unnecessary allocation")
              {
                  b = a;
                  // REQUIRE(location_of_b == b.operator->()); Should we ensure that no allocation happens, or is the impl defined?
@@ -78,7 +78,7 @@ TEST_CASE("Copy assignment for indirect of a primative type", "[assignment.copy.
 
 TEST_CASE("Move construction for indirect of a primitive type", "[constructor.move.primitive]")
 {
-    GIVEN("A value initalised indirect value")
+    GIVEN("A value-initalised indirect value")
     {    
         constexpr int a_value = 5;
         indirect<int> a{new int(a_value) };
@@ -100,7 +100,7 @@ TEST_CASE("Move construction for indirect of a primitive type", "[constructor.mo
 
 TEST_CASE("Move assignment for indirect of a primative type", "[assignment.move.primitive]")
 {
-    GIVEN("A two value initialised indirect values")
+    GIVEN("A two value-initialised indirect values")
     {
         constexpr int a_value = 5, b_value = 10;
         indirect<int> a{ new int(a_value) }, b{ new int(b_value) };
