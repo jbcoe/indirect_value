@@ -4,3 +4,8 @@
 [![GitHub Issues](https://img.shields.io/github/issues/jbcoe/indirect.svg)](http://github.com/jbcoe/indirect/issues)
 
 # indirect
+
+- Constant propagation from owner to contained value type
+- Deep copy semantics
+-
+
