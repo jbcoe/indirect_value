@@ -34,7 +34,7 @@ TEST_CASE("Copy construction for indirect of a primitive type", "[constructor.co
     }
 }
 
-TEST_CASE("Copy assignment for indirect of a primative type", "[assignment.copy.primitive]")
+TEST_CASE("Copy assignment for indirect of a primitive type", "[assignment.copy.primitive]")
 {
     GIVEN("A value-initialised indirect value")
     {
@@ -61,12 +61,12 @@ TEST_CASE("Copy assignment for indirect of a primative type", "[assignment.copy.
              constexpr int b_value = 10;
              indirect<int> b{ new int(b_value) };
              REQUIRE(*b == b_value);
-             //int const * const location_of_b = b.operator->();
+             int const * const location_of_b = b.operator->();
 
              THEN("The assigned to object make a deep copy of the original value without futher unnecessary allocation")
              {
                  b = a;
-                 // REQUIRE(location_of_b == b.operator->()); Should we ensure that no allocation happens, or is the impl defined?
+                 REQUIRE(location_of_b == b.operator->());
                  REQUIRE(*b == a_value);
                  REQUIRE(a.operator->() != nullptr);
                  REQUIRE(b.operator->() != nullptr);
@@ -98,7 +98,7 @@ TEST_CASE("Move construction for indirect of a primitive type", "[constructor.mo
     }
 }
 
-TEST_CASE("Move assignment for indirect of a primative type", "[assignment.move.primitive]")
+TEST_CASE("Move assignment for indirect of a primitive type", "[assignment.move.primitive]")
 {
     GIVEN("A two value-initialised indirect values")
     {

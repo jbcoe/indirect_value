@@ -40,7 +40,12 @@ class indirect {
 
   indirect& operator = (const indirect& i) {
     if (i.ptr_) { 
-      ptr_ = std::unique_ptr<T, D>(i.c_(*i.ptr_), D{});
+      if (!ptr_){
+        ptr_ = std::unique_ptr<T, D>(i.c_(*i.ptr_), D{});
+      }
+      else{
+        *ptr_ = *i.ptr_;
+      }
     }
     return *this;
   }
