@@ -24,8 +24,7 @@ class indirect {
     ptr_ = std::unique_ptr<T, D>(new T(std::forward<Ts>(ts)...), D{});
   }
 
-  indirect(T* t, C c = C{}, D d = D{}) : c_(std::move(c)) {
-    ptr_ = std::unique_ptr<T, D>(t, std::move(d));
+  indirect(T* t, C c = C{}, D d = D{}) : ptr_(std::unique_ptr<T, D>(t, std::move(d))), c_(std::move(c)) {
   }
 
   indirect(const indirect& i) {
@@ -34,8 +33,7 @@ class indirect {
     }
   }
 
-  indirect(indirect&& i) : c_(std::move(i.c_)) {
-    ptr_ = std::move(i.ptr_);
+  indirect(indirect&& i) noexcept : ptr_(std::exchange(i.ptr_, nullptr)), c_(std::exchange(i.c_, C{})) {
   }
 
   indirect& operator = (const indirect& i) {
@@ -50,7 +48,7 @@ class indirect {
     return *this;
   }
 
-  indirect& operator = (indirect&& i) {
+  indirect& operator = (indirect&& i) noexcept {
     c_ = std::exchange(i.c_, C{});
     ptr_ = std::exchange(i.ptr_, nullptr);
     return *this;

@@ -4,12 +4,88 @@
 
 using jbcoe::indirect;
 
-TEST_CASE("Nothing to see here", "[dummy]") { REQUIRE(2 + 2 != 5); }
-
+template <typename T>
+class copy_counter {
+public:
+    T* operator()(const T& rhs)
+    {
+        ++call_count;
+        return jbcoe::default_copy<T>().operator()(rhs);
+    }
+    inline static size_t call_count = 0;
+};
+        
+template <typename T>
+class delete_counter {
+public:
+    void operator()(T* rhs)
+    {
+        ++call_count;
+        return std::default_delete<T>().operator()(rhs);
+    }
+    inline static size_t call_count = 0;
+};
+ 
 TEST_CASE("Defeault construction for indirect", "[constructor.default]")
 {   
-   indirect<int> a{};
-    REQUIRE(a.operator->() == nullptr); 
+    GIVEN("The ability to track internal copies and deletes of the default constructor")
+    {
+   
+        WHEN("Initailising a default constructor")
+        {
+            indirect<int, copy_counter<int>, delete_counter<int>> a{};
+            REQUIRE(a.operator->() == nullptr);
+
+            THEN("Ensure no copies or deletes occur")
+            {
+                REQUIRE(copy_counter<int>::call_count == 0);
+                REQUIRE(delete_counter<int>::call_count == 0);
+            }
+            THEN("Expect a delete no to occur on destruction as the indirect was default initialised")
+            {
+                a.~indirect();
+                REQUIRE(copy_counter<int>::call_count == 0);
+                CHECK(delete_counter<int>::call_count == 0);
+            }
+        }
+    }
+}
+
+TEST_CASE("Element wise initialisation construction for indirect", "[constructor.element_wise]")
+{  
+    GIVEN("The ability to track intenal copies and deletes")
+    {
+        size_t copy_count = 0, delete_count = 0;
+        const auto copy_counter= [&copy_count](const auto& rhs)
+        { 
+            ++copy_count; 
+            return jbcoe::default_copy<std::remove_cv_t<std::remove_pointer_t<decltype(rhs)>>>().operator()(rhs);
+        };
+
+        const auto delete_counter= [&delete_count](auto* rhs)
+        { 
+            ++delete_count; 
+            std::default_delete<std::remove_cv_t<std::remove_pointer_t<decltype(rhs)>>>().operator()(rhs);
+        };
+
+        WHEN("Constructing objects of indirect")
+        {
+            indirect<int, decltype(copy_counter), decltype(delete_counter)> a{new int(0), copy_counter, delete_counter};
+            REQUIRE(a.operator->() != nullptr); 
+            
+            THEN("Ensure that no copies or deleted happen in the basic construction of a value")
+            {
+                REQUIRE(copy_count==0);
+                REQUIRE(delete_count==0);
+            }
+            THEN("Ensure destruction of an indirect caused the value to be deleted")
+            {
+                a.~indirect();
+                REQUIRE(copy_count==0);
+                REQUIRE(delete_count==1);
+            }
+        }
+    }
 }
 
 TEST_CASE("Copy construction for indirect of a primitive type", "[constructor.copy.primitive]")
@@ -105,7 +181,7 @@ TEST_CASE("Move assignment for indirect of a primitive type", "[assignment.move.
         constexpr int a_value = 5, b_value = 10;
         indirect<int> a{ new int(a_value) }, b{ new int(b_value) };
 
-        WHEN("The contents of the second it move assigned to the first")
+        WHEN("The contents of the second indirect move assigned to the first")
         {
             int const * const location_of_b = b.operator->();
             a = std::move(b);
@@ -119,3 +195,5 @@ TEST_CASE("Move assignment for indirect of a primitive type", "[assignment.move.
         }
     }
 }
+
+
