@@ -1,12 +1,13 @@
+#include "indirect.h"
+
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
-#include "indirect.h"
 
 using jbcoe::indirect;
 
 TEST_CASE("Nothing to see here", "[dummy]") { REQUIRE(2 + 2 != 5); }
 
-TEST_CASE("Defeault construction for indirect", "[constructor.default]")
+TEST_CASE("Default construction for indirect", "[constructor.default]")
 {   
    indirect<int> a{};
     REQUIRE(a.operator->() == nullptr); 

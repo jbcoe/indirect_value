@@ -20,7 +20,7 @@ class indirect {
   indirect() = default;
 
   template <class... Ts>
-  indirect(std::in_place_t, Ts&& ...ts) {
+  indirect(std::in_place_t, Ts&&... ts) {
     ptr_ = std::unique_ptr<T, D>(new T(std::forward<Ts>(ts)...), D{});
   }
 
@@ -28,29 +28,25 @@ class indirect {
     ptr_ = std::unique_ptr<T, D>(t, std::move(d));
   }
 
-  indirect(const indirect& i) {
-    if (i.ptr_) { 
+  indirect(const indirect& i) : c_(i.c_) {
+    if (i.ptr_) {
       ptr_ = std::unique_ptr<T, D>(i.c_(*i.ptr_), D{});
     }
   }
 
-  indirect(indirect&& i) : c_(std::move(i.c_)) {
-    ptr_ = std::move(i.ptr_);
-  }
+  indirect(indirect&& i) : c_(std::move(i.c_)) { ptr_ = std::move(i.ptr_); }
 
-  indirect& operator = (const indirect& i) {
-    if (i.ptr_) { 
-      if (!ptr_){
-        ptr_ = std::unique_ptr<T, D>(i.c_(*i.ptr_), D{});
-      }
-      else{
-        *ptr_ = *i.ptr_;
-      }
+  indirect& operator=(const indirect& i) {
+    c_ = i.c_;
+    if (i.ptr_) {
+      ptr_ = std::unique_ptr<T, D>(i.c_(*i.ptr_), D{});
+    } else {
+      ptr_ = nullptr;
     }
     return *this;
   }
 
-  indirect& operator = (indirect&& i) {
+  indirect& operator=(indirect&& i) {
     c_ = std::exchange(i.c_, C{});
     ptr_ = std::exchange(i.ptr_, nullptr);
     return *this;
