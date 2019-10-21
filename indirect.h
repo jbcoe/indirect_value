@@ -40,7 +40,7 @@ class indirect : private indirect_base<T, C> {
   indirect() = default;
 
   template <class... Ts>
-  indirect(std::in_place_t, Ts&& ...ts) {
+  indirect(std::in_place_t, Ts&&... ts) {
     ptr_ = std::unique_ptr<T, D>(new T(std::forward<Ts>(ts)...), D{});
   }
 
@@ -59,6 +59,7 @@ class indirect : private indirect_base<T, C> {
   }
 
   indirect& operator = (const indirect& i) {
+    base::operator=(i);
     if (i.ptr_) { 
       if (!ptr_){
         ptr_ = std::unique_ptr<T, D>(get_c()(*i.ptr_), D{});
@@ -70,7 +71,7 @@ class indirect : private indirect_base<T, C> {
     return *this;
   }
 
-  indirect& operator = (indirect&& i) {
+  indirect& operator=(indirect&& i) {
     base::operator=(std::move(i));
     ptr_ = std::exchange(i.ptr_, nullptr);
     return *this;
