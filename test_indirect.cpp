@@ -22,7 +22,7 @@ bool static_test()
 
 TEST_CASE("Ensure that indirect uses the minum space requirements", "[indirect.sizeof]")
 {
-    REQUIRE(static_test<sizeof(indirect<int>) == sizeof(std::unique_ptr<int>)>);
+    REQUIRE(static_test<sizeof(indirect<int>) == sizeof(std::unique_ptr<int>)>());
 }
 
 TEST_CASE("Default construction for indirect", "[constructor.default]")
