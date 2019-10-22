@@ -65,6 +65,8 @@ class indirect {
 
   const T& operator*() const { return *ptr_; }
 
+  explicit constexpr operator bool() const noexcept { return ptr_ != nullptr; }
+
   friend void swap(indirect& lhs, indirect& rhs) {
     using std::swap;
     swap(lhs.ptr_, rhs.ptr_);

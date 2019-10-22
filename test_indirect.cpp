@@ -212,4 +212,43 @@ TEST_CASE("Move assignment for indirect of a primitive type", "[assignment.move.
     }
 }
 
+TEST_CASE("Operator bool for indirect", "[operator.bool]")
+{ 
+    GIVEN("A default-initalised indirect value")
+    {
+        indirect<int> a;
 
+        WHEN("We expect the operator bool to return false as the internal pointer is null")
+        {
+            REQUIRE(a.operator->() == nullptr);
+            REQUIRE_FALSE(a);
+
+            THEN("Then when it is assigned a valid value for operator bool should return true")
+            {
+                constexpr int b_value = 10; 
+                a = indirect(new int(b_value));
+                REQUIRE(a.operator->() != nullptr);
+                REQUIRE(*a == b_value);
+                REQUIRE(a);
+            }
+        }
+    }
+    GIVEN("A pointer-initalised indirect value")
+    {
+        constexpr int value_a = 7;
+        indirect<int> a{ new int (value_a) };
+
+        WHEN("We expect the operator bool to return true as the internal pointer owns an instance")
+        {
+            REQUIRE(a.operator->() != nullptr);
+            REQUIRE(a);
+
+            THEN("Then when it is assigned a default state value for operator bool should return false")
+            { 
+                a = indirect<int>{};
+                REQUIRE(a.operator->() == nullptr);
+                REQUIRE_FALSE(a);
+            }
+        }
+    }
+}
