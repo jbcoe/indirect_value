@@ -1,6 +1,7 @@
+#include "indirect.h"
+
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
-#include "indirect.h"
 
 using jbcoe::indirect;
 
@@ -26,7 +27,7 @@ public:
     inline static size_t call_count = 0;
 };
  
-TEST_CASE("Defeault construction for indirect", "[constructor.default]")
+TEST_CASE("Default construction for indirect", "[constructor.default]")
 {   
     GIVEN("The ability to track internal copies and deletes of the default constructor")
     {
@@ -135,14 +136,27 @@ TEST_CASE("Copy assignment for indirect of a primitive type", "[assignment.copy.
         WHEN("Assigning a copy into a value-initalised indirect value")
         {
              constexpr int b_value = 10;
-             indirect<int> b{ new int(b_value) };
+             indirect<int> b{std::in_place, b_value};
              REQUIRE(*b == b_value);
-             int const * const location_of_b = b.operator->();
 
-             THEN("The assigned to object make a deep copy of the original value without futher unnecessary allocation")
+             THEN("The assigned to object makes a deep copy of the original value")
              {
                  b = a;
-                 REQUIRE(location_of_b == b.operator->());
+                 REQUIRE(*b == a_value);
+                 REQUIRE(a.operator->() != nullptr);
+                 REQUIRE(b.operator->() != nullptr);
+                 REQUIRE(b.operator->() != a.operator->());
+             }
+        }
+        WHEN("Assigning a copy into a pointer-initalised indirect value")
+        {
+             constexpr int b_value = 10;
+             indirect<int> b{ new int(b_value) };
+             REQUIRE(*b == b_value);
+
+             THEN("The assigned to object makes a deep copy of the original value")
+             {
+                 b = a;
                  REQUIRE(*b == a_value);
                  REQUIRE(a.operator->() != nullptr);
                  REQUIRE(b.operator->() != nullptr);
@@ -178,15 +192,17 @@ TEST_CASE("Move assignment for indirect of a primitive type", "[assignment.move.
 {
     GIVEN("A two value-initialised indirect values")
     {
-        constexpr int a_value = 5, b_value = 10;
-        indirect<int> a{ new int(a_value) }, b{ new int(b_value) };
+        constexpr int a_value = 5;
+        constexpr int b_value = 10;
+        indirect<int> a{ new int(a_value) };
+        indirect<int> b{ new int(b_value) };
 
-        WHEN("The contents of the second indirect move assigned to the first")
+        WHEN("The contents of the second indirect is move assigned to the first")
         {
             int const * const location_of_b = b.operator->();
             a = std::move(b);
 
-            THEN("The move assigned to value steals the contents of the second value, leaving that object in a null state")
+            THEN("The move-assigned-to value `a` steals the contents of the second value `b`, leaving that object, `b`, in a null state")
             {
                 REQUIRE(*a == b_value); 
                 REQUIRE(a.operator->() == location_of_b);

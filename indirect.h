@@ -20,15 +20,15 @@ class indirect {
   indirect() = default;
 
   template <class... Ts>
-  indirect(std::in_place_t, Ts&& ...ts) {
+  indirect(std::in_place_t, Ts&&... ts) {
     ptr_ = std::unique_ptr<T, D>(new T(std::forward<Ts>(ts)...), D{});
   }
 
   indirect(T* t, C c = C{}, D d = D{}) : ptr_(std::unique_ptr<T, D>(t, std::move(d))), c_(std::move(c)) {
   }
 
-  indirect(const indirect& i) {
-    if (i.ptr_) { 
+  indirect(const indirect& i) : c_(i.c_) {
+    if (i.ptr_) {
       ptr_ = std::unique_ptr<T, D>(i.c_(*i.ptr_), D{});
     }
   }
@@ -37,6 +37,7 @@ class indirect {
   }
 
   indirect& operator = (const indirect& i) {
+    c_ = i.c_;
     if (i.ptr_) { 
       if (!ptr_){
         ptr_ = std::unique_ptr<T, D>(i.c_(*i.ptr_), D{});
