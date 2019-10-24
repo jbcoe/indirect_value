@@ -6,9 +6,10 @@ endif()
 
 set(CPP_INDIRECT_VALUE_VERSION "0.0.0")
 
-project(indirect VERSION ${CPP_INDIRECT_VALUE_VERSION})
+project(indirect LANGUAGES CXX VERSION ${CPP_INDIRECT_VALUE_VERSION})
 
 option(ENABLE_SANITIZERS "Enable Address Sanitizer and Undefined Behaviour Sanitizer if available" OFF)
+option(ENABLE_CODE_COVERAGE "Enable code coverage if available (Mac OS X currently not supported)" OFF)
 
 add_library(indirect INTERFACE)
 target_include_directories(indirect
@@ -106,6 +107,31 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
     list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/contrib)
     include(Catch)
     catch_discover_tests(test_indirect)
+
+    if (APPLE)
+        SET(ENABLE_CODE_COVERAGE OFF CACHE BOOL "Ensure code coverage is switched off for Mac OS until the code coverage library addresses the AppleClang issue" FORCE)
+    endif()
+
+    if (ENABLE_CODE_COVERAGE)
+        include(FetchContent)
+        FetchContent_Declare(
+            codecoverage
+            GIT_REPOSITORY https://github.com/RWTH-HPC/CMake-codecov.git
+        )
+
+        FetchContent_GetProperties(codecoverage)
+        if(NOT codecoverage_POPULATED)
+            FetchContent_Populate(codecoverage)
+            list(APPEND CMAKE_MODULE_PATH ${codecoverage_SOURCE_DIR}/cmake)
+        endif()
+
+        list(APPEND CMAKE_MODULE_PATH ${codecoverage_SOURCE_DIR}/cmake)
+        set(ENABLE_COVERAGE ON CACHE BOOL "Enable coverage build." FORCE)
+        find_package(codecov)
+        add_coverage(test_indirect)
+        list(APPEND LCOV_REMOVE_PATTERNS "'/usr/*'")
+        coverage_evaluate()
+    endif()
 
     install(
         FILES
