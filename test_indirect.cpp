@@ -5,7 +5,27 @@
 
 using jbcoe::indirect;
 
-template <typename T>
+/*! Helper function to capture constexpr results in catch test reporting.
+    \note
+        Credit to Jason Turner: https://twitter.com/lefticus/status/980530307580514304
+    \tparam B
+        Compile time condition.
+    \return
+        The compile time condition result.
+ */
+template<bool B>
+bool static_test()
+{
+    static_assert(B);
+    return B;
+}
+TEST_CASE("Nothing to see here", "[dummy]") { REQUIRE(2 + 2 != 5); }
+TEST_CASE("Ensure that indirect uses the minum space requirements", "[indirect.sizeof]")
+{
+    REQUIRE(static_test<sizeof(indirect<int>) == sizeof(std::unique_ptr<int>)>());
+}
+
+
 class copy_counter {
 public:
     T* operator()(const T& rhs)
