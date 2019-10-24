@@ -125,7 +125,6 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
             list(APPEND CMAKE_MODULE_PATH ${codecoverage_SOURCE_DIR}/cmake)
         endif()
 
-        list(APPEND CMAKE_MODULE_PATH ${codecoverage_SOURCE_DIR}/cmake)
         set(ENABLE_COVERAGE ON CACHE BOOL "Enable coverage build." FORCE)
         find_package(codecov)
         add_coverage(test_indirect)
