@@ -5,11 +5,29 @@
 
 using jbcoe::indirect;
 
-TEST_CASE("Nothing to see here", "[dummy]") { REQUIRE(2 + 2 != 5); }
+/*! Helper function to capture constexpr results in catch test reporting.
+    \note
+        Credit to Jason Turner: https://twitter.com/lefticus/status/980530307580514304
+    \tparam B
+        Compile time condition.
+    \return
+        The compile time condition result.
+ */
+template<bool B>
+bool static_test()
+{
+    static_assert(B);
+    return B;
+}
+
+TEST_CASE("Ensure that indirect uses the minum space requirements", "[indirect.sizeof]")
+{
+    REQUIRE(static_test<sizeof(indirect<int>) == sizeof(std::unique_ptr<int>)>());
+}
 
 TEST_CASE("Default construction for indirect", "[constructor.default]")
 {   
-   indirect<int> a{};
+    indirect<int> a{};
     REQUIRE(a.operator->() == nullptr); 
 }
 
