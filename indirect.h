@@ -15,7 +15,7 @@ struct default_copy {
 template <class T, class C = default_copy<T>, bool CanBeEmptyBaseClass = std::is_empty_v<C> && !std::is_final_v<C> >
 class indirect_base {
 protected:
-  template<class U = C, class = std::enable_if_t<std::is_default_constructible<U>::value> >
+  template<class U = C, class = std::enable_if_t<std::is_default_constructible_v<U>>>
   indirect_base() noexcept(noexcept(C())) {}
   indirect_base(C c) : c_(std::move(c)) {}
   const C& get() const noexcept { return c_; }
@@ -25,7 +25,7 @@ protected:
 template <class T, class C>
 class indirect_base<T, C, true> : private C {
 protected:
-  template<class U=C, class = std::enable_if_t<std::is_default_constructible<U>::value>>
+  template<class U=C, class = std::enable_if_t<std::is_default_constructible_v<U>>>
   indirect_base() noexcept(noexcept(C())) {}
   indirect_base(C c) : C(std::move(c)) {}
   const C& get() const noexcept { return *this; }
