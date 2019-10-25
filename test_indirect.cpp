@@ -19,13 +19,13 @@ bool static_test()
     static_assert(B);
     return B;
 }
-TEST_CASE("Nothing to see here", "[dummy]") { REQUIRE(2 + 2 != 5); }
+
 TEST_CASE("Ensure that indirect uses the minum space requirements", "[indirect.sizeof]")
 {
     REQUIRE(static_test<sizeof(indirect<int>) == sizeof(std::unique_ptr<int>)>());
 }
 
-
+template <typename T>
 class copy_counter {
 public:
     T* operator()(const T& rhs)
@@ -62,13 +62,11 @@ TEST_CASE("Default construction for indirect", "[constructor.default]")
                 REQUIRE(copy_counter<int>::call_count == 0);
                 REQUIRE(delete_counter<int>::call_count == 0);
             }
-            THEN("Expect a delete no to occur on destruction as the indirect was default initialised")
-            {
-                a.~indirect();
-                REQUIRE(copy_counter<int>::call_count == 0);
-                CHECK(delete_counter<int>::call_count == 0);
-            }
         }
+        
+        // Expect a delete no to occur on destruction as the indirect was default initialised
+        REQUIRE(copy_counter<int>::call_count == 0);
+        CHECK(delete_counter<int>::call_count == 0);
     }
 }
 
@@ -99,13 +97,11 @@ TEST_CASE("Element wise initialisation construction for indirect", "[constructor
                 REQUIRE(copy_count==0);
                 REQUIRE(delete_count==0);
             }
-            THEN("Ensure destruction of an indirect caused the value to be deleted")
-            {
-                a.~indirect();
-                REQUIRE(copy_count==0);
-                REQUIRE(delete_count==1);
-            }
         }
+        
+        // Ensure destruction of an indirect caused the value to be deleted
+        REQUIRE(copy_count==0);
+        REQUIRE(delete_count==1);
     }
 }
 
