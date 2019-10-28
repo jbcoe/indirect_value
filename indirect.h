@@ -50,23 +50,18 @@ class indirect : private indirect_base<T, C> {
 
   indirect(const indirect& i) : base(get_c()) {
     if (i.ptr_) { 
-      ptr_ = std::unique_ptr<T, D>(get_c()(*i.ptr_), D{});
+      ptr_ = std::unique_ptr<T, D>(i.get_c()(*i.ptr_), D{});
     }
   }
 
-  indirect(indirect&& i) : base(std::move(i)) {
-    ptr_ = std::move(i.ptr_);
-  }
+  indirect(indirect&& i) : base(std::move(i)), ptr_(std::move(i.ptr_)) {}
 
   indirect& operator = (const indirect& i) {
-    base::operator=(i);
-    if (i.ptr_) { 
-      if (!ptr_){
-        ptr_ = std::unique_ptr<T, D>(get_c()(*i.ptr_), D{});
-      }
-      else{
-        *ptr_ = *i.ptr_;
-      }
+    if (i.ptr_) {
+      base::operator=(i);
+      ptr_ = std::unique_ptr<T, D>(i.get_c()(*i.ptr_), D{});
+    } else {
+      ptr_.reset();
     }
     return *this;
   }
