@@ -3,7 +3,7 @@
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
 
-using jbcoe::indirect;
+using isocpp_p1950::indirect;
 
 /*! Helper function to capture constexpr results in catch test reporting.
     \note

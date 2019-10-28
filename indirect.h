@@ -1,11 +1,11 @@
-#ifndef JBCOE_CPP_INDIRECT
-#define JBCOE_CPP_INDIRECT
+#ifndef ISOCPP_P1950_INDIRECT_H
+#define ISOCPP_P1950_INDIRECT_H
 
 #include <memory>
 #include <utility>
 #include <type_traits>
 
-namespace jbcoe {
+namespace isocpp_p1950 {
 
 template <class T>
 struct default_copy {
@@ -97,6 +97,6 @@ class indirect : private indirect_base<T, C> {
     const C& get_c() const noexcept { return base::get(); }
 };
 
-}  // namespace jbcoe
+}  // namespace isocpp_p1950
 
-#endif  // JBCOE_CPP_INDIRECT
+#endif  // ISOCPP_P1950_INDIRECT_H
