@@ -28,7 +28,7 @@ TEST_CASE("Ensure that indirect uses the minum space requirements", "[indirect.s
 template <typename T>
 class copy_counter {
 public:
-    T* operator()(const T& rhs)
+    T* operator()(const T& rhs) const
     {
         ++call_count;
         return jbcoe::default_copy<T>().operator()(rhs);
@@ -39,7 +39,7 @@ public:
 template <typename T>
 class delete_counter {
 public:
-    void operator()(T* rhs)
+    void operator()(T* rhs) const
     {
         ++call_count;
         return std::default_delete<T>().operator()(rhs);
@@ -49,10 +49,9 @@ public:
  
 TEST_CASE("Default construction for indirect", "[constructor.default]")
 {   
-    GIVEN("The ability to track internal copies and deletes of the default constructor")
+    GIVEN("An indirect value")//The ability to track internal copies and deletes of the default constructor")
     {
-   
-        WHEN("Initailising a default constructor")
+        WHEN("Default-constructed")
         {
             indirect<int, copy_counter<int>, delete_counter<int>> a{};
             REQUIRE(a.operator->() == nullptr);
@@ -63,10 +62,43 @@ TEST_CASE("Default construction for indirect", "[constructor.default]")
                 REQUIRE(delete_counter<int>::call_count == 0);
             }
         }
-        
-        // Expect a delete no to occur on destruction as the indirect was default initialised
-        REQUIRE(copy_counter<int>::call_count == 0);
-        CHECK(delete_counter<int>::call_count == 0);
+        WHEN("The default-constructed value is destroyed")
+        {
+            THEN("Ensure no delete operation occurs")
+            {
+                // Expect a delete not to occur on destruction as the indirect was default initialised
+                REQUIRE(copy_counter<int>::call_count == 0);
+                CHECK(delete_counter<int>::call_count == 0);
+            }
+        }
+    }
+    GIVEN("An indirect value") //"The ability to track internal copies and deletes of the default constructor")
+    {
+        WHEN("Default constructed then copy assigned from a pointer-initialised")//("Create a default-constructed indirect which is later copy-constructed")
+        {
+            indirect<int, copy_counter<int>, delete_counter<int>> a{};
+            constexpr int b_value = 10;
+            indirect<int, copy_counter<int>, delete_counter<int>> b{new int (b_value)};
+            REQUIRE(a.operator->() == nullptr);
+            REQUIRE(b.operator->() != nullptr);
+            REQUIRE(*b == b_value);
+
+            THEN("Ensure a copy occures but no delete occurs")
+            {
+                a=b;
+                REQUIRE(copy_counter<int>::call_count == 1);
+                REQUIRE(delete_counter<int>::call_count == 0);
+            }
+        }
+        WHEN("The value is destroyed")
+        {
+            THEN("Ensure a delete operation occurs")
+            {
+                // Expect both indirect object to be deleted on destruction .
+                REQUIRE(copy_counter<int>::call_count == 1);
+                CHECK(delete_counter<int>::call_count == 2);
+            }
+        }
     }
 }
 
