@@ -1,9 +1,9 @@
-#include "indirect.h"
+#include "indirect_value.h"
 
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
 
-using isocpp_p1950::indirect;
+using isocpp_p1950::indirect_value;
 
 /*! Helper function to capture constexpr results in catch test reporting.
     \note
@@ -20,9 +20,9 @@ bool static_test()
     return B;
 }
 
-TEST_CASE("Ensure that indirect uses the minum space requirements", "[indirect.sizeof]")
+TEST_CASE("Ensure that indirect_value uses the minum space requirements", "[indirect_value.sizeof]")
 {
-    REQUIRE(static_test<sizeof(indirect<int>) == sizeof(std::unique_ptr<int>)>());
+    REQUIRE(static_test<sizeof(indirect_value<int>) == sizeof(std::unique_ptr<int>)>());
 }
 
 template <typename T>
@@ -47,13 +47,13 @@ public:
     inline static size_t call_count = 0;
 };
  
-TEST_CASE("Default construction for indirect", "[constructor.default]")
+TEST_CASE("Default construction for indirect_value", "[constructor.default]")
 {   
-    GIVEN("An indirect value")//The ability to track internal copies and deletes of the default constructor")
+    GIVEN("An indirect_value value")//The ability to track internal copies and deletes of the default constructor")
     {
         WHEN("Default-constructed")
         {
-            indirect<int, copy_counter<int>, delete_counter<int>> a{};
+            indirect_value<int, copy_counter<int>, delete_counter<int>> a{};
             REQUIRE(a.operator->() == nullptr);
 
             THEN("Ensure no copies or deletes occur")
@@ -66,19 +66,19 @@ TEST_CASE("Default construction for indirect", "[constructor.default]")
         {
             THEN("Ensure no delete operation occurs")
             {
-                // Expect a delete not to occur on destruction as the indirect was default initialised
+                // Expect a delete not to occur on destruction as the indirect_value was default initialised
                 REQUIRE(copy_counter<int>::call_count == 0);
                 CHECK(delete_counter<int>::call_count == 0);
             }
         }
     }
-    GIVEN("An indirect value") //"The ability to track internal copies and deletes of the default constructor")
+    GIVEN("An indirect_value value") //"The ability to track internal copies and deletes of the default constructor")
     {
-        WHEN("Default constructed then copy assigned from a pointer-initialised")//("Create a default-constructed indirect which is later copy-constructed")
+        WHEN("Default constructed then copy assigned from a pointer-initialised")//("Create a default-constructed indirect_value which is later copy-constructed")
         {
-            indirect<int, copy_counter<int>, delete_counter<int>> a{};
+            indirect_value<int, copy_counter<int>, delete_counter<int>> a{};
             constexpr int b_value = 10;
-            indirect<int, copy_counter<int>, delete_counter<int>> b{new int (b_value)};
+            indirect_value<int, copy_counter<int>, delete_counter<int>> b{new int (b_value)};
             REQUIRE(a.operator->() == nullptr);
             REQUIRE(b.operator->() != nullptr);
             REQUIRE(*b == b_value);
@@ -94,7 +94,7 @@ TEST_CASE("Default construction for indirect", "[constructor.default]")
         {
             THEN("Ensure a delete operation occurs")
             {
-                // Expect both indirect object to be deleted on destruction .
+                // Expect both indirect_value object to be deleted on destruction .
                 REQUIRE(copy_counter<int>::call_count == 1);
                 CHECK(delete_counter<int>::call_count == 2);
             }
@@ -102,7 +102,7 @@ TEST_CASE("Default construction for indirect", "[constructor.default]")
     }
 }
 
-TEST_CASE("Element wise initialisation construction for indirect", "[constructor.element_wise]")
+TEST_CASE("Element wise initialisation construction for indirect_value", "[constructor.element_wise]")
 {  
     GIVEN("The ability to track intenal copies and deletes")
     {
@@ -119,9 +119,9 @@ TEST_CASE("Element wise initialisation construction for indirect", "[constructor
             std::default_delete<std::remove_cv_t<std::remove_pointer_t<decltype(rhs)>>>().operator()(rhs);
         };
 
-        WHEN("Constructing objects of indirect")
+        WHEN("Constructing objects of indirect_value")
         {
-            indirect<int, decltype(copy_counter), decltype(delete_counter)> a{new int(0), copy_counter, delete_counter};
+            indirect_value<int, decltype(copy_counter), decltype(delete_counter)> a{new int(0), copy_counter, delete_counter};
             REQUIRE(a.operator->() != nullptr); 
             
             THEN("Ensure that no copies or deleted happen in the basic construction of a value")
@@ -131,23 +131,23 @@ TEST_CASE("Element wise initialisation construction for indirect", "[constructor
             }
         }
         
-        // Ensure destruction of an indirect caused the value to be deleted
+        // Ensure destruction of an indirect_value caused the value to be deleted
         REQUIRE(copy_count==0);
         REQUIRE(delete_count==1);
     }
 }
 
-TEST_CASE("Copy construction for indirect of a primitive type", "[constructor.copy.primitive]")
+TEST_CASE("Copy construction for indirect_value of a primitive type", "[constructor.copy.primitive]")
 {
-    GIVEN("A value-initialised indirect value")
+    GIVEN("A value-initialised indirect_value value")
     {
         constexpr int a_value = 5;
-        indirect<int> a{ new int(a_value) };
+        indirect_value<int> a{ new int(a_value) };
         REQUIRE(*a == a_value);
 
-        WHEN("Taking a copy of the value-initialised indirect value")
+        WHEN("Taking a copy of the value-initialised indirect_value value")
         {
-            indirect<int> copy_of_a{ a };
+            indirect_value<int> copy_of_a{ a };
             THEN("The copy is a deep copy of the orginal value")
             {
                 REQUIRE(*copy_of_a == a_value); 
@@ -159,17 +159,17 @@ TEST_CASE("Copy construction for indirect of a primitive type", "[constructor.co
     }
 }
 
-TEST_CASE("Copy assignment for indirect of a primitive type", "[assignment.copy.primitive]")
+TEST_CASE("Copy assignment for indirect_value of a primitive type", "[assignment.copy.primitive]")
 {
-    GIVEN("A value-initialised indirect value")
+    GIVEN("A value-initialised indirect_value value")
     {
         constexpr int a_value = 5;
-        indirect<int> a{ new int(a_value) };
+        indirect_value<int> a{ new int(a_value) };
         REQUIRE(*a == a_value);
  
-        WHEN("Assigning a copy into a default-initalised indirect value")
+        WHEN("Assigning a copy into a default-initalised indirect_value value")
         {
-             indirect<int> b{};
+             indirect_value<int> b{};
              REQUIRE(b.operator->() == nullptr);
 
              THEN("The assigned to object makes a deep copy of the orginal value")
@@ -181,10 +181,10 @@ TEST_CASE("Copy assignment for indirect of a primitive type", "[assignment.copy.
                  REQUIRE(b.operator->() != a.operator->());
              }
         }
-        WHEN("Assigning a copy into a value-initalised indirect value")
+        WHEN("Assigning a copy into a value-initalised indirect_value value")
         {
              constexpr int b_value = 10;
-             indirect<int> b{std::in_place, b_value};
+             indirect_value<int> b{std::in_place, b_value};
              REQUIRE(*b == b_value);
 
              THEN("The assigned to object makes a deep copy of the original value")
@@ -196,10 +196,10 @@ TEST_CASE("Copy assignment for indirect of a primitive type", "[assignment.copy.
                  REQUIRE(b.operator->() != a.operator->());
              }
         }
-        WHEN("Assigning a copy into a pointer-initalised indirect value")
+        WHEN("Assigning a copy into a pointer-initalised indirect_value value")
         {
              constexpr int b_value = 10;
-             indirect<int> b{ new int(b_value) };
+             indirect_value<int> b{ new int(b_value) };
              REQUIRE(*b == b_value);
 
              THEN("The assigned to object makes a deep copy of the original value")
@@ -214,17 +214,17 @@ TEST_CASE("Copy assignment for indirect of a primitive type", "[assignment.copy.
     }
 }
 
-TEST_CASE("Move construction for indirect of a primitive type", "[constructor.move.primitive]")
+TEST_CASE("Move construction for indirect_value of a primitive type", "[constructor.move.primitive]")
 {
-    GIVEN("A value-initalised indirect value")
+    GIVEN("A value-initalised indirect_value value")
     {    
         constexpr int a_value = 5;
-        indirect<int> a{new int(a_value) };
+        indirect_value<int> a{new int(a_value) };
         
         WHEN("Constucting a new object via moving the orignal value")
         {
             int const * const location_of_a = a.operator->();
-            indirect<int> b{ std::move(a) };
+            indirect_value<int> b{ std::move(a) };
 
             THEN("The constructed object steals the contents of original value leaving it in a null state")
             {
@@ -236,16 +236,16 @@ TEST_CASE("Move construction for indirect of a primitive type", "[constructor.mo
     }
 }
 
-TEST_CASE("Move assignment for indirect of a primitive type", "[assignment.move.primitive]")
+TEST_CASE("Move assignment for indirect_value of a primitive type", "[assignment.move.primitive]")
 {
-    GIVEN("A two value-initialised indirect values")
+    GIVEN("A two value-initialised indirect_value values")
     {
         constexpr int a_value = 5;
         constexpr int b_value = 10;
-        indirect<int> a{ new int(a_value) };
-        indirect<int> b{ new int(b_value) };
+        indirect_value<int> a{ new int(a_value) };
+        indirect_value<int> b{ new int(b_value) };
 
-        WHEN("The contents of the second indirect is move assigned to the first")
+        WHEN("The contents of the second indirect_value is move assigned to the first")
         {
             int const * const location_of_b = b.operator->();
             a = std::move(b);
@@ -260,11 +260,11 @@ TEST_CASE("Move assignment for indirect of a primitive type", "[assignment.move.
     }
 }
 
-TEST_CASE("Operator bool for indirect", "[operator.bool]")
+TEST_CASE("Operator bool for indirect_value", "[operator.bool]")
 { 
-    GIVEN("A default-initalised indirect value")
+    GIVEN("A default-initalised indirect_value value")
     {
-        indirect<int> a;
+        indirect_value<int> a;
 
         WHEN("We expect the operator bool to return false as the internal pointer is null")
         {
@@ -274,17 +274,17 @@ TEST_CASE("Operator bool for indirect", "[operator.bool]")
             THEN("Then when it is assigned a valid value for operator bool should return true")
             {
                 constexpr int b_value = 10; 
-                a = indirect(new int(b_value));
+                a = indirect_value(new int(b_value));
                 REQUIRE(a.operator->() != nullptr);
                 REQUIRE(*a == b_value);
                 REQUIRE(a);
             }
         }
     }
-    GIVEN("A pointer-initalised indirect value")
+    GIVEN("A pointer-initalised indirect_value value")
     {
         constexpr int value_a = 7;
-        indirect<int> a{ new int (value_a) };
+        indirect_value<int> a{ new int (value_a) };
 
         WHEN("We expect the operator bool to return true as the internal pointer owns an instance")
         {
@@ -293,7 +293,7 @@ TEST_CASE("Operator bool for indirect", "[operator.bool]")
 
             THEN("Then when it is assigned a default state value for operator bool should return false")
             { 
-                a = indirect<int>{};
+                a = indirect_value<int>{};
                 REQUIRE(a.operator->() == nullptr);
                 REQUIRE_FALSE(a);
             }
