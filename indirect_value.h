@@ -1,5 +1,5 @@
-#ifndef ISOCPP_P1950_INDIRECT_H
-#define ISOCPP_P1950_INDIRECT_H
+#ifndef ISOCPP_P1950_INDIRECT_VALUE_H
+#define ISOCPP_P1950_INDIRECT_VALUE_H
 
 #include <memory>
 #include <utility>
@@ -13,51 +13,51 @@ struct default_copy {
 };
 
 template <class T, class C = default_copy<T>, bool CanBeEmptyBaseClass = std::is_empty_v<C> && !std::is_final_v<C> >
-class indirect_base {
+class indirect_value_base {
 protected:
   template<class U = C, class = std::enable_if_t<std::is_default_constructible_v<U>>>
-  indirect_base() noexcept(noexcept(C())) {}
-  indirect_base(C c) : c_(std::move(c)) {}
+  indirect_value_base() noexcept(noexcept(C())) {}
+  indirect_value_base(C c) : c_(std::move(c)) {}
   const C& get() const noexcept { return c_; }
   C c_;
 };
 
 template <class T, class C>
-class indirect_base<T, C, true> : private C {
+class indirect_value_base<T, C, true> : private C {
 protected:
   template<class U=C, class = std::enable_if_t<std::is_default_constructible_v<U>>>
-  indirect_base() noexcept(noexcept(C())) {}
-  indirect_base(C c) : C(std::move(c)) {}
+  indirect_value_base() noexcept(noexcept(C())) {}
+  indirect_value_base(C c) : C(std::move(c)) {}
   const C& get() const noexcept { return *this; }
 };
 
 template <class T, class C = default_copy<T>, class D = std::default_delete<T>>
-class indirect : private indirect_base<T, C> {
+class indirect_value : private indirect_value_base<T, C> {
   
-  using base = indirect_base<T, C>;
+  using base = indirect_value_base<T, C>;
   
   std::unique_ptr<T, D> ptr_;
 
  public:
-  indirect() = default;
+  indirect_value() = default;
 
   template <class... Ts>
-  indirect(std::in_place_t, Ts&&... ts) {
+  indirect_value(std::in_place_t, Ts&&... ts) {
     ptr_ = std::unique_ptr<T, D>(new T(std::forward<Ts>(ts)...), D{});
   }
 
-  indirect(T* t, C c = C{}, D d = D{}) : base(std::move(c)), ptr_(std::unique_ptr<T, D>(t, std::move(d))) {
+  indirect_value(T* t, C c = C{}, D d = D{}) : base(std::move(c)), ptr_(std::unique_ptr<T, D>(t, std::move(d))) {
   }
 
-  indirect(const indirect& i) : base(get_c()) {
+  indirect_value(const indirect_value& i) : base(get_c()) {
     if (i.ptr_) { 
       ptr_ = std::unique_ptr<T, D>(get_c()(*i.ptr_), D{});
     }
   }
 
-  indirect(indirect&& i) noexcept : base(std::move(i)), ptr_(std::exchange(i.ptr_, nullptr)) {}
+  indirect_value(indirect_value&& i) noexcept : base(std::move(i)), ptr_(std::exchange(i.ptr_, nullptr)) {}
 
-  indirect& operator = (const indirect& i) {
+  indirect_value& operator = (const indirect_value& i) {
     base::operator=(i);
     if (i.ptr_) { 
       if (!ptr_){
@@ -70,13 +70,13 @@ class indirect : private indirect_base<T, C> {
     return *this;
   }
 
-  indirect& operator = (indirect&& i) noexcept {
+  indirect_value& operator = (indirect_value&& i) noexcept {
     base::operator=(std::move(i));
     ptr_ = std::exchange(i.ptr_, nullptr);
     return *this;
   }
 
-  ~indirect() = default;
+  ~indirect_value() = default;
 
   T* operator->() { return ptr_.operator->(); }
 
@@ -88,7 +88,7 @@ class indirect : private indirect_base<T, C> {
 
   explicit constexpr operator bool() const noexcept { return ptr_ != nullptr; }
 
-  friend void swap(indirect& lhs, indirect& rhs) {
+  friend void swap(indirect_value& lhs, indirect_value& rhs) {
     using std::swap;
     swap(lhs.ptr_, rhs.ptr_);
     swap(lhs.c_, rhs.c_);
@@ -100,4 +100,4 @@ class indirect : private indirect_base<T, C> {
 
 }  // namespace isocpp_p1950
 
-#endif  // ISOCPP_P1950_INDIRECT_H
+#endif  // ISOCPP_P1950_INDIRECT_VALUE_H

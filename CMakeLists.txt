@@ -6,30 +6,30 @@ endif()
 
 set(CPP_INDIRECT_VALUE_VERSION "0.0.0")
 
-project(indirect LANGUAGES CXX VERSION ${CPP_INDIRECT_VALUE_VERSION})
+project(indirect_value LANGUAGES CXX VERSION ${CPP_INDIRECT_VALUE_VERSION})
 
 option(ENABLE_SANITIZERS "Enable Address Sanitizer and Undefined Behaviour Sanitizer if available" OFF)
 option(ENABLE_CODE_COVERAGE "Enable code coverage if available (Mac OS X currently not supported)" OFF)
 
-add_library(indirect INTERFACE)
-target_include_directories(indirect
+add_library(indirect_value INTERFACE)
+target_include_directories(indirect_value
     INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<INSTALL_INTERFACE:include>
 )
 
-target_sources(indirect
+target_sources(indirect_value
     INTERFACE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/indirect.h>
-        $<INSTALL_INTERFACE:include/indirect.h>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/indirect_value.h>
+        $<INSTALL_INTERFACE:include/indirect_value.h>
 )
 
-target_compile_features(indirect
+target_compile_features(indirect_value
     INTERFACE
         cxx_std_17
 )
 
-add_library(indirect::indirect ALIAS indirect)
+add_library(indirect_value::indirect_value ALIAS indirect_value)
 
 if (${CPP_INDIRECT_IS_SUBPROJECT})
 
@@ -45,21 +45,21 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
         add_subdirectory(${catch2_SOURCE_DIR} ${catch2_BINARY_DIR})
     endif()
 
-    add_executable(test_indirect test_indirect.cpp)
-    target_link_libraries(test_indirect
+    add_executable(test_indirect_value test_indirect_value.cpp)
+    target_link_libraries(test_indirect_value
         PRIVATE
-            indirect::indirect
+            indirect_value::indirect_value
             Catch2::Catch2
     )
 
-    target_compile_options(test_indirect
+    target_compile_options(test_indirect_value
         PRIVATE
             $<$<CXX_COMPILER_ID:MSVC>:/EHsc>
             $<$<CXX_COMPILER_ID:MSVC>:/W4>
             $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:Clang>>:-Werror;-Wall;-Wno-self-assign-overloaded;-Wno-unknown-warning-option>
     )
 
-    set_target_properties(test_indirect PROPERTIES
+    set_target_properties(test_indirect_value PROPERTIES
         CXX_STANDARD 17
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS NO
@@ -79,7 +79,7 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
                 INTERFACE_COMPILE_OPTIONS "${SANITIZER_FLAGS_ASAN}"
                 INTERFACE_LINK_OPTIONS "${SANITIZER_FLAGS_ASAN}"
             )
-            target_link_libraries(test_indirect
+            target_link_libraries(test_indirect_value
                 PRIVATE
                     asan
             )
@@ -91,7 +91,7 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
                 INTERFACE_COMPILE_OPTIONS "${SANITIZER_FLAGS_UBSAN}"
                 INTERFACE_LINK_OPTIONS "${SANITIZER_FLAGS_UBSAN}"
             )
-            target_link_libraries(test_indirect
+            target_link_libraries(test_indirect_value
                 PRIVATE
                     ubsan
             )
@@ -100,13 +100,13 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
 
     enable_testing()
     add_test(
-        NAME test_indirect
-        COMMAND test_indirect
+        NAME test_indirect_value
+        COMMAND test_indirect_value
         WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
     list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/contrib)
     include(Catch)
-    catch_discover_tests(test_indirect)
+    catch_discover_tests(test_indirect_value)
 
     if (APPLE)
         SET(ENABLE_CODE_COVERAGE OFF CACHE BOOL "Ensure code coverage is switched off for Mac OS until the code coverage library addresses the AppleClang issue" FORCE)
@@ -127,14 +127,14 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
 
         set(ENABLE_COVERAGE ON CACHE BOOL "Enable coverage build." FORCE)
         find_package(codecov)
-        add_coverage(test_indirect)
+        add_coverage(test_indirect_value)
         list(APPEND LCOV_REMOVE_PATTERNS "'/usr/*'")
         coverage_evaluate()
     endif()
 
     install(
         FILES
-            "${CMAKE_CURRENT_SOURCE_DIR}/indirect.h"
+            "${CMAKE_CURRENT_SOURCE_DIR}/indirect_value.h"
         DESTINATION
             include
     )
@@ -147,38 +147,38 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
     )
 
     install(
-        TARGETS indirect
-        EXPORT indirect_target
-        DESTINATION lib/cmake/indirect
+        TARGETS indirect_value
+        EXPORT indirect_value_target
+        DESTINATION lib/cmake/indirect_value
     )
 
     install(
-        EXPORT indirect_target
-        NAMESPACE indirect::
-        DESTINATION lib/cmake/indirect
-	    FILE indirect-target.cmake
+        EXPORT indirect_value_target
+        NAMESPACE indirect_value::
+        DESTINATION lib/cmake/indirect_value
+	    FILE indirect_value-target.cmake
     )
 
     include(CMakePackageConfigHelpers)
     configure_package_config_file(
-        ${CMAKE_CURRENT_LIST_DIR}/indirect-config.cmake.in
-        ${CMAKE_CURRENT_BINARY_DIR}/indirect-config.cmake
+        ${CMAKE_CURRENT_LIST_DIR}/indirect_value-config.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/indirect_value-config.cmake
         INSTALL_DESTINATION
-            lib/cmake/indirect
+            lib/cmake/indirect_value
     )
 
     write_basic_package_version_file(
-        ${CMAKE_CURRENT_BINARY_DIR}/indirect-version.cmake
-        VERSION ${indirect_VERSION}
+        ${CMAKE_CURRENT_BINARY_DIR}/indirect_value-version.cmake
+        VERSION ${indirect_value_VERSION}
         COMPATIBILITY SameMajorVersion
         ARCH_INDEPENDENT
     )
 
     install(
         FILES
-            ${CMAKE_CURRENT_BINARY_DIR}/indirect-config.cmake
-            ${CMAKE_CURRENT_BINARY_DIR}/indirect-version.cmake
+            ${CMAKE_CURRENT_BINARY_DIR}/indirect_value-config.cmake
+            ${CMAKE_CURRENT_BINARY_DIR}/indirect_value-version.cmake
         DESTINATION
-            lib/cmake/indirect
+            lib/cmake/indirect_value
     )
 endif()
