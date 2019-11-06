@@ -3,7 +3,7 @@
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
 
-using jbcoe::indirect;
+using isocpp_p1950::indirect;
 
 /*! Helper function to capture constexpr results in catch test reporting.
     \note
@@ -31,7 +31,7 @@ public:
     T* operator()(const T& rhs) const
     {
         ++call_count;
-        return jbcoe::default_copy<T>().operator()(rhs);
+        return isocpp_p1950::default_copy<T>().operator()(rhs);
     }
     inline static size_t call_count = 0;
 };
@@ -110,7 +110,7 @@ TEST_CASE("Element wise initialisation construction for indirect", "[constructor
         const auto copy_counter= [&copy_count](const auto& rhs)
         { 
             ++copy_count; 
-            return jbcoe::default_copy<std::remove_cv_t<std::remove_pointer_t<decltype(rhs)>>>().operator()(rhs);
+            return isocpp_p1950::default_copy<std::remove_cv_t<std::remove_pointer_t<decltype(rhs)>>>().operator()(rhs);
         };
 
         const auto delete_counter= [&delete_count](auto* rhs)
