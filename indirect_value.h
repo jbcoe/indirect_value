@@ -12,29 +12,13 @@ struct default_copy {
   T* operator()(const T& t) const { return new T(t); }
 };
 
-template <class T, class C = default_copy<T>, bool CanBeEmptyBaseClass = std::is_empty_v<C> && !std::is_final_v<C> >
-class indirect_value_base {
-protected:
-  template<class U = C, class = std::enable_if_t<std::is_default_constructible_v<U>>>
-  indirect_value_base() noexcept(noexcept(C())) {}
-  indirect_value_base(C c) : c_(std::move(c)) {}
-  const C& get() const noexcept { return c_; }
-  C c_;
+template <class T>
+struct default_assign {
+  T& operator()(T& lhs, const T& rhs) const { lhs = rhs; return lhs; }
 };
 
-template <class T, class C>
-class indirect_value_base<T, C, true> : private C {
-protected:
-  template<class U=C, class = std::enable_if_t<std::is_default_constructible_v<U>>>
-  indirect_value_base() noexcept(noexcept(C())) {}
-  indirect_value_base(C c) : C(std::move(c)) {}
-  const C& get() const noexcept { return *this; }
-};
-
-template <class T, class C = default_copy<T>, class D = std::default_delete<T>>
-class indirect_value : private indirect_value_base<T, C> {
-  
-  using base = indirect_value_base<T, C>;
+template <class T, class C = default_copy<T>, class A= default_assign<T>, class D = std::default_delete<T>>
+class indirect_value : private C, private A {
   
   std::unique_ptr<T, D> ptr_;
 
@@ -46,32 +30,38 @@ class indirect_value : private indirect_value_base<T, C> {
     ptr_ = std::unique_ptr<T, D>(new T(std::forward<Ts>(ts)...), D{});
   }
 
-  indirect_value(T* t, C c = C{}, D d = D{}) : base(std::move(c)), ptr_(std::unique_ptr<T, D>(t, std::move(d))) {
+  indirect_value(T* t, C c = C{}, A a = A{}, D d = D{}) : C(std::move(c)), A(std::move(a)), ptr_(std::unique_ptr<T, D>(t, std::move(d))) {
   }
 
-  indirect_value(const indirect_value& i) : base(get_c()) {
+  indirect_value(const indirect_value& i) : C(static_cast<const C&>(i)), A(static_cast<const A&>(i))  {
     if (i.ptr_) { 
-      ptr_ = std::unique_ptr<T, D>(get_c()(*i.ptr_), D{});
+      ptr_ = std::unique_ptr<T, D>(static_cast<const C&>(i)(*i.ptr_), D{});
     }
   }
 
-  indirect_value(indirect_value&& i) noexcept : base(std::move(i)), ptr_(std::exchange(i.ptr_, nullptr)) {}
+  indirect_value(indirect_value&& i) noexcept : C(std::move(static_cast<C&>(i))), A(std::move(static_cast<A&>(i))), ptr_(std::exchange(i.ptr_, nullptr)) {}
 
   indirect_value& operator = (const indirect_value& i) {
-    base::operator=(i);
-    if (i.ptr_) { 
+    if (!i) { 
+      ptr_.reset();
+    } else {
+      // TODO: Can this be done more nicely?
+      static_cast<C&>(*this) = static_cast<const C&>(i); 
+      static_cast<A&>(*this) = static_cast<const A&>(i); 
+      
       if (!ptr_){
-        ptr_ = std::unique_ptr<T, D>(get_c()(*i.ptr_), D{});
+        ptr_ = std::unique_ptr<T, D>(static_cast<const C&>(i)(*i.ptr_), D{});
       }
       else{
-        *ptr_ = *i.ptr_;
+        static_cast<const A&>(i)(*ptr_, *i.ptr_);
       }
     }
     return *this;
   }
 
   indirect_value& operator = (indirect_value&& i) noexcept {
-    base::operator=(std::move(i));
+    static_cast<C&>(*this) = static_cast<C&&>(i); 
+    static_cast<A&>(*this) = static_cast<A&&>(i); 
     ptr_ = std::exchange(i.ptr_, nullptr);
     return *this;
   }
@@ -93,9 +83,6 @@ class indirect_value : private indirect_value_base<T, C> {
     swap(lhs.ptr_, rhs.ptr_);
     swap(lhs.c_, rhs.c_);
   }
-
-  private:
-    const C& get_c() const noexcept { return base::get(); }
 };
 
 }  // namespace isocpp_p1950

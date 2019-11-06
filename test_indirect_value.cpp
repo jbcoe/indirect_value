@@ -4,6 +4,7 @@
 #include "catch2/catch.hpp"
 
 using isocpp_p1950::indirect_value;
+using isocpp_p1950::default_assign;
 
 /*! Helper function to capture constexpr results in catch test reporting.
     \note
@@ -76,9 +77,9 @@ TEST_CASE("Default construction for indirect_value", "[constructor.default]")
     {
         WHEN("Default constructed then copy assigned from a pointer-initialised")//("Create a default-constructed indirect_value which is later copy-constructed")
         {
-            indirect_value<int, copy_counter<int>, delete_counter<int>> a{};
+            indirect_value<int, copy_counter<int>, default_assign<int>, delete_counter<int>> a{};
             constexpr int b_value = 10;
-            indirect_value<int, copy_counter<int>, delete_counter<int>> b{new int (b_value)};
+            indirect_value<int, copy_counter<int>, default_assign<int>, delete_counter<int>> b{new int (b_value)};
             REQUIRE(a.operator->() == nullptr);
             REQUIRE(b.operator->() != nullptr);
             REQUIRE(*b == b_value);
@@ -121,7 +122,7 @@ TEST_CASE("Element wise initialisation construction for indirect_value", "[const
 
         WHEN("Constructing objects of indirect_value")
         {
-            indirect_value<int, decltype(copy_counter), decltype(delete_counter)> a{new int(0), copy_counter, delete_counter};
+            indirect_value<int, decltype(copy_counter), default_assign<int>, decltype(delete_counter)> a{new int(0), copy_counter, default_assign<int>{}, delete_counter};
             REQUIRE(a.operator->() != nullptr); 
             
             THEN("Ensure that no copies or deleted happen in the basic construction of a value")
