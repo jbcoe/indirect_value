@@ -15,7 +15,8 @@ struct default_copy {
 template <class T, class C = default_copy<T>, bool CanBeEmptyBaseClass = std::is_empty_v<C> && !std::is_final_v<C> >
 class indirect_base {
 protected:
-  indirect_base() noexcept(noexcept(C())) = default;
+  template<class U = C, class = std::enable_if_t<std::is_default_constructible_v<U>>>
+  indirect_base() noexcept(noexcept(C())) {}
   indirect_base(C c) : c_(std::move(c)) {}
   const C& get() const noexcept { return c_; }
   C c_;
@@ -24,7 +25,8 @@ protected:
 template <class T, class C>
 class indirect_base<T, C, true> : private C {
 protected:
-  indirect_base() noexcept(noexcept(C())) = default;
+  template<class U=C, class = std::enable_if_t<std::is_default_constructible_v<U>>>
+  indirect_base() noexcept(noexcept(C())) {}
   indirect_base(C c) : C(std::move(c)) {}
   const C& get() const noexcept { return *this; }
 };
@@ -44,8 +46,7 @@ class indirect : private indirect_base<T, C> {
     ptr_ = std::unique_ptr<T, D>(new T(std::forward<Ts>(ts)...), D{});
   }
 
-  indirect(T* t, C c = C{}, D d = D{}) : base(std::move(c)) {
-    ptr_ = std::unique_ptr<T, D>(t, std::move(d));
+  indirect(T* t, C c = C{}, D d = D{}) : base(std::move(c)), ptr_(std::unique_ptr<T, D>(t, std::move(d))) {
   }
 
   indirect(const indirect& i) : base(get_c()) {
@@ -54,9 +55,7 @@ class indirect : private indirect_base<T, C> {
     }
   }
 
-  indirect(indirect&& i) : base(std::move(i)) {
-    ptr_ = std::move(i.ptr_);
-  }
+  indirect(indirect&& i) noexcept : base(std::move(i)), ptr_(std::exchange(i.ptr_, nullptr)) {}
 
   indirect& operator = (const indirect& i) {
     base::operator=(i);
@@ -71,7 +70,7 @@ class indirect : private indirect_base<T, C> {
     return *this;
   }
 
-  indirect& operator=(indirect&& i) {
+  indirect& operator = (indirect&& i) noexcept {
     base::operator=(std::move(i));
     ptr_ = std::exchange(i.ptr_, nullptr);
     return *this;
@@ -86,6 +85,8 @@ class indirect : private indirect_base<T, C> {
   T& operator*() { return *ptr_; }
 
   const T& operator*() const { return *ptr_; }
+
+  explicit constexpr operator bool() const noexcept { return ptr_ != nullptr; }
 
   friend void swap(indirect& lhs, indirect& rhs) {
     using std::swap;

@@ -25,10 +25,116 @@ TEST_CASE("Ensure that indirect uses the minum space requirements", "[indirect.s
     REQUIRE(static_test<sizeof(indirect<int>) == sizeof(std::unique_ptr<int>)>());
 }
 
+template <typename T>
+class copy_counter {
+public:
+    T* operator()(const T& rhs) const
+    {
+        ++call_count;
+        return jbcoe::default_copy<T>().operator()(rhs);
+    }
+    inline static size_t call_count = 0;
+};
+        
+template <typename T>
+class delete_counter {
+public:
+    void operator()(T* rhs) const
+    {
+        ++call_count;
+        return std::default_delete<T>().operator()(rhs);
+    }
+    inline static size_t call_count = 0;
+};
+ 
 TEST_CASE("Default construction for indirect", "[constructor.default]")
 {   
-    indirect<int> a{};
-    REQUIRE(a.operator->() == nullptr); 
+    GIVEN("An indirect value")//The ability to track internal copies and deletes of the default constructor")
+    {
+        WHEN("Default-constructed")
+        {
+            indirect<int, copy_counter<int>, delete_counter<int>> a{};
+            REQUIRE(a.operator->() == nullptr);
+
+            THEN("Ensure no copies or deletes occur")
+            {
+                REQUIRE(copy_counter<int>::call_count == 0);
+                REQUIRE(delete_counter<int>::call_count == 0);
+            }
+        }
+        WHEN("The default-constructed value is destroyed")
+        {
+            THEN("Ensure no delete operation occurs")
+            {
+                // Expect a delete not to occur on destruction as the indirect was default initialised
+                REQUIRE(copy_counter<int>::call_count == 0);
+                CHECK(delete_counter<int>::call_count == 0);
+            }
+        }
+    }
+    GIVEN("An indirect value") //"The ability to track internal copies and deletes of the default constructor")
+    {
+        WHEN("Default constructed then copy assigned from a pointer-initialised")//("Create a default-constructed indirect which is later copy-constructed")
+        {
+            indirect<int, copy_counter<int>, delete_counter<int>> a{};
+            constexpr int b_value = 10;
+            indirect<int, copy_counter<int>, delete_counter<int>> b{new int (b_value)};
+            REQUIRE(a.operator->() == nullptr);
+            REQUIRE(b.operator->() != nullptr);
+            REQUIRE(*b == b_value);
+
+            THEN("Ensure a copy occures but no delete occurs")
+            {
+                a=b;
+                REQUIRE(copy_counter<int>::call_count == 1);
+                REQUIRE(delete_counter<int>::call_count == 0);
+            }
+        }
+        WHEN("The value is destroyed")
+        {
+            THEN("Ensure a delete operation occurs")
+            {
+                // Expect both indirect object to be deleted on destruction .
+                REQUIRE(copy_counter<int>::call_count == 1);
+                CHECK(delete_counter<int>::call_count == 2);
+            }
+        }
+    }
+}
+
+TEST_CASE("Element wise initialisation construction for indirect", "[constructor.element_wise]")
+{  
+    GIVEN("The ability to track intenal copies and deletes")
+    {
+        size_t copy_count = 0, delete_count = 0;
+        const auto copy_counter= [&copy_count](const auto& rhs)
+        { 
+            ++copy_count; 
+            return jbcoe::default_copy<std::remove_cv_t<std::remove_pointer_t<decltype(rhs)>>>().operator()(rhs);
+        };
+
+        const auto delete_counter= [&delete_count](auto* rhs)
+        { 
+            ++delete_count; 
+            std::default_delete<std::remove_cv_t<std::remove_pointer_t<decltype(rhs)>>>().operator()(rhs);
+        };
+
+        WHEN("Constructing objects of indirect")
+        {
+            indirect<int, decltype(copy_counter), decltype(delete_counter)> a{new int(0), copy_counter, delete_counter};
+            REQUIRE(a.operator->() != nullptr); 
+            
+            THEN("Ensure that no copies or deleted happen in the basic construction of a value")
+            {
+                REQUIRE(copy_count==0);
+                REQUIRE(delete_count==0);
+            }
+        }
+        
+        // Ensure destruction of an indirect caused the value to be deleted
+        REQUIRE(copy_count==0);
+        REQUIRE(delete_count==1);
+    }
 }
 
 TEST_CASE("Copy construction for indirect of a primitive type", "[constructor.copy.primitive]")
@@ -139,7 +245,7 @@ TEST_CASE("Move assignment for indirect of a primitive type", "[assignment.move.
         indirect<int> a{ new int(a_value) };
         indirect<int> b{ new int(b_value) };
 
-        WHEN("The contents of the second is move assigned to the first")
+        WHEN("The contents of the second indirect is move assigned to the first")
         {
             int const * const location_of_b = b.operator->();
             a = std::move(b);
@@ -149,6 +255,47 @@ TEST_CASE("Move assignment for indirect of a primitive type", "[assignment.move.
                 REQUIRE(*a == b_value); 
                 REQUIRE(a.operator->() == location_of_b);
                 REQUIRE(b.operator->() == nullptr); 
+            }
+        }
+    }
+}
+
+TEST_CASE("Operator bool for indirect", "[operator.bool]")
+{ 
+    GIVEN("A default-initalised indirect value")
+    {
+        indirect<int> a;
+
+        WHEN("We expect the operator bool to return false as the internal pointer is null")
+        {
+            REQUIRE(a.operator->() == nullptr);
+            REQUIRE_FALSE(a);
+
+            THEN("Then when it is assigned a valid value for operator bool should return true")
+            {
+                constexpr int b_value = 10; 
+                a = indirect(new int(b_value));
+                REQUIRE(a.operator->() != nullptr);
+                REQUIRE(*a == b_value);
+                REQUIRE(a);
+            }
+        }
+    }
+    GIVEN("A pointer-initalised indirect value")
+    {
+        constexpr int value_a = 7;
+        indirect<int> a{ new int (value_a) };
+
+        WHEN("We expect the operator bool to return true as the internal pointer owns an instance")
+        {
+            REQUIRE(a.operator->() != nullptr);
+            REQUIRE(a);
+
+            THEN("Then when it is assigned a default state value for operator bool should return false")
+            { 
+                a = indirect<int>{};
+                REQUIRE(a.operator->() == nullptr);
+                REQUIRE_FALSE(a);
             }
         }
     }
