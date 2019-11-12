@@ -45,7 +45,15 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
         add_subdirectory(${catch2_SOURCE_DIR} ${catch2_BINARY_DIR})
     endif()
 
-    add_executable(test_indirect_value test_indirect_value.cpp)
+    add_executable(test_indirect_value "")
+    target_sources(test_indirect_value
+        PRIVATE
+            example_pimpl.h
+            example_pimpl.cpp
+            test_pimpl.cpp
+            test_indirect_value.cpp
+    )
+
     target_link_libraries(test_indirect_value
         PRIVATE
             indirect_value::indirect_value
