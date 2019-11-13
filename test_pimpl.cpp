@@ -33,8 +33,7 @@ TEST_CASE("Basic life time operations of a pimpl now work for free via indirect_
         WHEN("Copying assigning across to a default constructed instance.")
         {
             const std::string nameB = "Second Pimpl";
-            example_pimpl b;
-            b.set_name(nameB.c_str());
+            example_pimpl b(nameB.c_str());
             b = a;
 
             THEN("Ensure the copied class mirrors the original")
