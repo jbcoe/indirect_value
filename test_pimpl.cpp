@@ -18,7 +18,7 @@ TEST_CASE("Basic life time operations of a pimpl now work for free via indirect_
             THEN("Ensure the copied class mirrors the original")
             {
                 REQUIRE(std::string(a.get_name()) == std::string(b.get_name()));
-                REQUIRE(a.get_name() != b.get_name());
+                REQUIRE(reinterpret_cast<intptr_t >(a.get_name()) != reinterpret_cast<intptr_t >(b.get_name()));
                 REQUIRE(b.is_valid() == true);
             }
         }
@@ -30,7 +30,7 @@ TEST_CASE("Basic life time operations of a pimpl now work for free via indirect_
             THEN("Ensure the moved class has the contents of the original")
             {
                 REQUIRE(std::string(b.get_name()) == std::string(string_location));
-                REQUIRE(b.get_name() == string_location);
+                REQUIRE(reinterpret_cast<intptr_t >(b.get_name()) == reinterpret_cast<intptr_t >(string_location));
                 REQUIRE(a.is_valid() == false);
             }
         }
@@ -44,7 +44,7 @@ TEST_CASE("Basic life time operations of a pimpl now work for free via indirect_
             THEN("Ensure the copied class mirrors the original")
             {
                 REQUIRE(std::string(a.get_name()) == std::string(b.get_name()));
-                REQUIRE(a.get_name() != b.get_name());
+                REQUIRE(reinterpret_cast<intptr_t >(a.get_name()) != reinterpret_cast<intptr_t >(b.get_name()));
                 REQUIRE(b.is_valid() == true);
             }
         }
@@ -57,7 +57,7 @@ TEST_CASE("Basic life time operations of a pimpl now work for free via indirect_
             THEN("Ensure the moved class has the contents of the original")
             {
                 REQUIRE(std::string(b.get_name()) == std::string(string_location));
-                REQUIRE(b.get_name() == string_location);
+                REQUIRE(reinterpret_cast<intptr_t >(b.get_name()) == reinterpret_cast<intptr_t >(string_location));
                 REQUIRE(a.is_valid() == false);
             }
         }
