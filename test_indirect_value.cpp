@@ -15,7 +15,7 @@ using isocpp_p1950::default_assign;
         The compile time condition result.
  */
 template<bool B>
-bool static_test()
+constexpr bool static_test()
 {
     static_assert(B);
     return B;
@@ -150,7 +150,7 @@ TEST_CASE("Copy construction for indirect_value of a primitive type", "[construc
         WHEN("Taking a copy of the value-initialised indirect_value")
         {
             indirect_value<int> copy_of_a{ a };
-            THEN("The copy is a deep copy of the orginal value")
+            THEN("The copy is a deep copy of the original value")
             {
                 REQUIRE(*copy_of_a == a_value); 
                 REQUIRE(a.operator->() != nullptr); 
@@ -294,6 +294,7 @@ TEST_CASE("Operator bool for indirect_value", "[operator.bool]")
             }
         }
     }
+
     GIVEN("A pointer-initalised indirect_value")
     {
         constexpr int value_a = 7;

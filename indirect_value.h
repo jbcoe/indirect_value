@@ -51,8 +51,7 @@ class indirect_value : private C, private A {
       
       if (!ptr_){
         ptr_ = std::unique_ptr<T, D>(static_cast<const C&>(i)(*i.ptr_), D{});
-      }
-      else{
+      } else {
         static_cast<const A&>(i)(*ptr_, *i.ptr_);
       }
     }
