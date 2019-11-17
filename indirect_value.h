@@ -64,7 +64,7 @@ class indirect_value : private indirect_value_base<T, C> {
         ptr_ = std::unique_ptr<T, D>(get_c()(*i.ptr_), D{});
       }
       else{
-        *ptr_ = *i.ptr_;
+        ptr_.reset( get_c()(*i.ptr_) );
       }
     }
     return *this;

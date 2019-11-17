@@ -14,13 +14,13 @@ using isocpp_p1950::indirect_value;
         The compile time condition result.
  */
 template<bool B>
-bool static_test()
+constexpr bool static_test()
 {
     static_assert(B);
     return B;
 }
 
-TEST_CASE("Ensure that indirect_value uses the minum space requirements", "[indirect_value.sizeof]")
+TEST_CASE("Ensure that indirect_value uses the minimum space requirements", "[indirect_value.sizeof]")
 {
     REQUIRE(static_test<sizeof(indirect_value<int>) == sizeof(std::unique_ptr<int>)>());
 }
@@ -148,7 +148,7 @@ TEST_CASE("Copy construction for indirect_value of a primitive type", "[construc
         WHEN("Taking a copy of the value-initialised indirect_value value")
         {
             indirect_value<int> copy_of_a{ a };
-            THEN("The copy is a deep copy of the orginal value")
+            THEN("The copy is a deep copy of the original value")
             {
                 REQUIRE(*copy_of_a == a_value); 
                 REQUIRE(a.operator->() != nullptr); 
@@ -281,7 +281,7 @@ TEST_CASE("Operator bool for indirect_value", "[operator.bool]")
             }
         }
     }
-    GIVEN("A pointer-initalised indirect_value value")
+    GIVEN("A pointer-initialised indirect_value value")
     {
         constexpr int value_a = 7;
         indirect_value<int> a{ new int (value_a) };
