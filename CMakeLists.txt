@@ -149,6 +149,7 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
     install(
         FILES
             "${CMAKE_CURRENT_SOURCE_DIR}/indirect_value.h"
+            "${CMAKE_CURRENT_SOURCE_DIR}/indirect_value.natvis"
         DESTINATION
             include
     )
