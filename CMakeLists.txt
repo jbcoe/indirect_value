@@ -11,6 +11,11 @@ project(indirect_value LANGUAGES CXX VERSION ${CPP_INDIRECT_VALUE_VERSION})
 option(ENABLE_SANITIZERS "Enable Address Sanitizer and Undefined Behaviour Sanitizer if available" OFF)
 option(ENABLE_CODE_COVERAGE "Enable code coverage if available (Mac OS X currently not supported)" OFF)
 
+include(CTest)
+include(FetchContent)
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
 add_library(indirect_value INTERFACE)
 target_include_directories(indirect_value
     INTERFACE
@@ -22,6 +27,9 @@ target_sources(indirect_value
     INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/indirect_value.h>
         $<INSTALL_INTERFACE:include/indirect_value.h>
+        # Only include natvis files in Visual Studio
+        $<BUILD_INTERFACE:$<$<CXX_COMPILER_ID:MSVC>:${CMAKE_CURRENT_SOURCE_DIR}/indirect_value.natvis>>
+        $<INSTALL_INTERFACE:$<$<CXX_COMPILER_ID:MSVC>:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}/indirect_value.natvis>>
 )
 
 target_compile_features(indirect_value
@@ -33,7 +41,6 @@ add_library(indirect_value::indirect_value ALIAS indirect_value)
 
 if (${CPP_INDIRECT_IS_SUBPROJECT})
 
-    include(FetchContent)
     FetchContent_Declare(
         catch2
         GIT_REPOSITORY https://github.com/catchorg/Catch2.git
@@ -121,7 +128,6 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
     endif()
 
     if (ENABLE_CODE_COVERAGE)
-        include(FetchContent)
         FetchContent_Declare(
             codecoverage
             GIT_REPOSITORY https://github.com/RWTH-HPC/CMake-codecov.git
@@ -167,7 +173,6 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
 	    FILE indirect_value-target.cmake
     )
 
-    include(CMakePackageConfigHelpers)
     configure_package_config_file(
         ${CMAKE_CURRENT_LIST_DIR}/indirect_value-config.cmake.in
         ${CMAKE_CURRENT_BINARY_DIR}/indirect_value-config.cmake
