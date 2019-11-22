@@ -1,3 +1,5 @@
+# An indirect value-type for C++ (perfect-pimpl)
+
 [![travis][badge.travis]][travis]
 [![appveyor][badge.appveyor]][appveyor]
 [![codecov][badge.codecov]][codecov]
@@ -18,8 +20,6 @@
 [language]: https://en.wikipedia.org/wiki/C%2B%2B17
 [license]: https://en.wikipedia.org/wiki/MIT_License
 [issues]: http://github.com/jbcoe/indirect_value/issues
-
-# indirect_value
 
 The class template `indirect_value` is proposed for addition to the C++ Standard Library.
 
