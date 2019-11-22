@@ -1,10 +1,8 @@
 @PACKAGE_INIT@
 
-set_and_check(CPP_INDIRECT_INCLUDE_DIR "@PACKAGE_INCLUDE_INSTALL_DIR@")
+check_required_components(indirect_value)
 
-check_required_components(indirect)
-
-if(NOT TARGET indirect::indirect)
+if(NOT TARGET indirect_value::indirect_value)
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
-    include(${CMAKE_CURRENT_LIST_DIR}/indirect-target.cmake)
+    include(${CMAKE_CURRENT_LIST_DIR}/indirect_value-target.cmake)
 endif()

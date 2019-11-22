@@ -6,7 +6,7 @@ set(CMAKE_VERBOSE_MAKEFILE TRUE)
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup(TARGETS)
 
-find_package(polymorphic_value REQUIRED)
+find_package(indirect_value REQUIRED)
 find_package(Catch2 REQUIRED)
 
 add_executable(test_indirect_value ../../test_indirect_value.cpp)
