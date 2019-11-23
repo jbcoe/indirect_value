@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
 if(NOT DEFINED PROJECT_NAME)
     set(CPP_INDIRECT_IS_SUBPROJECT ON)
@@ -8,13 +8,16 @@ set(CPP_INDIRECT_VALUE_VERSION "0.0.0")
 
 project(indirect_value LANGUAGES CXX VERSION ${CPP_INDIRECT_VALUE_VERSION})
 
-option(ENABLE_SANITIZERS "Enable Address Sanitizer and Undefined Behaviour Sanitizer if available" OFF)
-option(ENABLE_CODE_COVERAGE "Enable code coverage if available (Mac OS X currently not supported)" OFF)
-
 include(CTest)
 include(FetchContent)
 include(GNUInstallDirs)
+include(CMakeDependentOption)
 include(CMakePackageConfigHelpers)
+
+# Ensure code coverage is switched off for Mac OS until the code coverage library addresses the AppleClang issue
+cmake_dependent_option(ENABLE_CODE_COVERAGE "Enable code coverage" OFF "\"${CMAKE_CXX_COMPILER_ID}\" STREQUAL \"AppleClang\"" ON)
+cmake_dependent_option(ENABLE_INCLUDE_NATVIS "Enable inclusion of a natvis file for debugging" ON "\"${CMAKE_CXX_COMPILER_ID}\" STREQUAL \"MSVC\"" OFF)
+option(ENABLE_SANITIZERS "Enable Address Sanitizer and Undefined Behaviour Sanitizer if available" OFF)
 
 add_library(indirect_value INTERFACE)
 target_include_directories(indirect_value
@@ -29,7 +32,7 @@ target_sources(indirect_value
         $<INSTALL_INTERFACE:include/indirect_value.h>
         # Only include natvis files in Visual Studio
         $<BUILD_INTERFACE:$<$<CXX_COMPILER_ID:MSVC>:${CMAKE_CURRENT_SOURCE_DIR}/indirect_value.natvis>>
-        $<INSTALL_INTERFACE:$<$<CXX_COMPILER_ID:MSVC>:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}/indirect_value.natvis>>
+        $<INSTALL_INTERFACE:$<${ENABLE_INCLUDE_NATVIS}:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}/indirect_value.natvis>>
 )
 
 target_compile_features(indirect_value
@@ -122,10 +125,6 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
     list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/contrib)
     include(Catch)
     catch_discover_tests(test_indirect_value)
-
-    if (APPLE)
-        SET(ENABLE_CODE_COVERAGE OFF CACHE BOOL "Ensure code coverage is switched off for Mac OS until the code coverage library addresses the AppleClang issue" FORCE)
-    endif()
 
     if (ENABLE_CODE_COVERAGE)
         FetchContent_Declare(
