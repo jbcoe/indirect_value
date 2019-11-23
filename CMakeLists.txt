@@ -36,7 +36,7 @@ target_sources(indirect_value
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/indirect_value.h>
         # Only include natvis files in Visual Studio
         $<BUILD_INTERFACE:$<$<CXX_COMPILER_ID:MSVC>:${CMAKE_CURRENT_SOURCE_DIR}/indirect_value.natvis>>
-        $<INSTALL_INTERFACE:$<${ENABLE_INCLUDE_NATVIS}:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}/indirect_value.natvis>>
+        $<INSTALL_INTERFACE:$<$<BOOL:{ENABLE_INCLUDE_NATVIS}>:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}/indirect_value.natvis>>
 )
 
 target_compile_features(indirect_value
