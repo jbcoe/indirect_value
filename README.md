@@ -116,11 +116,13 @@ ctest
 
 The following configuration options are available:
 
-| Name                | Possible Values | Description                             | Default Value |
-|---------------------|-----------------|-----------------------------------------|---------------|
-| `BUILD_TESTING`     | `ON`, `OFF`     | Build the test suite                    | `ON`          |
-| `ENABLE_SANITIZERS` | `ON`, `OFF`     | Build the tests with sanitizers enabled | `OFF`         |
-| `Catch2_ROOT`       | `<path>`        | Path to a Catch2 installation           | undefined     |
+| Name                    | Possible Values | Description                             | Default Value                  |
+|-------------------------|-----------------|-----------------------------------------|--------------------------------|
+| `BUILD_TESTING`         | `ON`, `OFF`     | Build the test suite                    | `ON`                           |
+| `ENABLE_SANITIZERS`     | `ON`, `OFF`     | Build the tests with sanitizers enabled | `OFF`                          |
+| `ENABLE_INCLUDE_NATVIS` | `ON`, `OFF`     | Build the tests with sanitizers enabled | `ON` (for MSVC) else OFF`      |
+| `Catch2_ROOT`           | `<path>`        | Path to a Catch2 installation           | undefined                      |
+
 
 ## Installing Via CMake
 

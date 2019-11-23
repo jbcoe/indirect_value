@@ -15,7 +15,7 @@ include(CMakeDependentOption)
 include(CMakePackageConfigHelpers)
 
 # Ensure code coverage is switched off for Mac OS until the code coverage library addresses the AppleClang issue
-cmake_dependent_option(ENABLE_CODE_COVERAGE "Enable code coverage" OFF "\"${CMAKE_CXX_COMPILER_ID}\" STREQUAL \"AppleClang\"" ON)
+cmake_dependent_option(ENABLE_CODE_COVERAGE "Enable code coverage" ON "\"${CMAKE_CXX_COMPILER_ID}\" STREQUAL \"Clang\" OR \"${CMAKE_CXX_COMPILER_ID}\" STREQUAL \"GNU\"" OFF)
 cmake_dependent_option(ENABLE_INCLUDE_NATVIS "Enable inclusion of a natvis file for debugging" ON "\"${CMAKE_CXX_COMPILER_ID}\" STREQUAL \"MSVC\"" OFF)
 option(ENABLE_SANITIZERS "Enable Address Sanitizer and Undefined Behaviour Sanitizer if available" OFF)
 
