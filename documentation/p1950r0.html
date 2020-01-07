@@ -1579,6 +1579,60 @@ The Pimpl idiom has become a well-known engineering paradigm in the C++ world
    <h3 class="heading settled" data-level="2.4" id="why-polymophic_value-does-not-solve-this-problem-ie-not-paying-for-what-you-dont-use"><span class="secno">2.4. </span><span class="content">Why polymophic_value does not solve this problem, i.e. not paying for what you don’t use.</span><a class="self-link" href="#why-polymophic_value-does-not-solve-this-problem-ie-not-paying-for-what-you-dont-use"></a></h3>
    <h3 class="heading settled" data-level="2.5" id="completeness-of-t"><span class="secno">2.5. </span><span class="content">Completeness of T*</span><a class="self-link" href="#completeness-of-t"></a></h3>
     Recommended practice for pointer-to-implementation of Pimpl classes since C++11 has been to store the pointer-to-implementation in a std::unique_ptr [S. Meyers]. Smart pointer types in the Standard Library expect that some of the members can be instantiated with incomplete types [H.Hinnant]. Similarly, this is the case for indirect_value, the table outlines the expected behaviour for incomplete types: 
+   <table>
+    <thead>
+     <tr>
+      <th>Method
+      <th>Description
+      <th>Incomplete/Complete
+    <tbody>
+     <tr>
+      <td>indirect_value()
+      <td>Default constructor
+      <td>Incomplete
+     <tr>
+      <td>indirect_value(const indirect_value&amp;)
+      <td>Copy-constructor
+      <td>Complete
+     <tr>
+      <td>indirect_value(indirect_value&amp;&amp;)
+      <td>Move-constructor
+      <td>Incomplete
+     <tr>
+      <td>~indirect_value()
+      <td>Destructor
+      <td>Complete
+     <tr>
+      <td>indirect_value&amp; indirect_value::operator=(const indirect_value&amp;)
+      <td>Copy-assignment
+      <td>Complete
+     <tr>
+      <td>indirect_value&amp; indirect_value::operator=(indirect_value&amp;&amp;)
+      <td>Move-assignment
+      <td>Incomplete 
+     <tr>
+      <td>
+       <p>T&amp; operator*()</p>
+       <p>const T&amp; operator*() </p>
+      <td>Indirection-operator
+      <td>Incomplete 
+     <tr>
+      <td>
+       <p>T* operator->() noexcept</p>
+       <p>const T* operator->() const noexcept</p>
+      <td>Member-of-pointer-operator 
+      <td>Incomplete 
+     <tr>
+      <td>explicit operator bool() const noexcept
+      <td>Bool-operator
+      <td>Incomplete
+     <tr>
+      <td>
+       void swap(indirect_value
+       <t>&amp; p) noexcept</t>
+      <td>Swap
+      <td>Incomplete
+   </table>
    <h3 class="heading settled" data-level="2.6" id="impact-on-the-standard"><span class="secno">2.6. </span><span class="content">Impact on the standard</span><a class="self-link" href="#impact-on-the-standard"></a></h3>
     This proposal is a pure library extension. It requires additions to be made to the standard library header 
    <memory>
