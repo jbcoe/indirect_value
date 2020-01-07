@@ -1167,6 +1167,18 @@ Possible extra rowspan handling
 		margin-left: auto;
 		margin-right: auto;
 	}
+	.overlarge {
+		/* Magic to create good table positioning:
+		   "content column" is 50ems wide at max; less on smaller screens.
+		   Extra space (after ToC + content) is empty on the right.
+
+		   1. When table < content column, centers table in column.
+		   2. When content < table < available, left-aligns.
+		   3. When table > available, fills available + scroll bar.
+		*/ 
+		display: grid;
+		grid-template-columns: minmax(0, 50em);
+	}
 	.overlarge > table {
 		/* limit preferred width of table */
 		max-width: 50em;
@@ -1176,7 +1188,6 @@ Possible extra rowspan handling
 
 	@media (min-width: 55em) {
 		.overlarge {
-			margin-left: calc(13px + 26.5rem - 50vw);
 			margin-right: calc(13px + 26.5rem - 50vw);
 			max-width: none;
 		}
@@ -1184,14 +1195,12 @@ Possible extra rowspan handling
 	@media screen and (min-width: 78em) {
 		body:not(.toc-inline) .overlarge {
 			/* 30.5em body padding 50em content area */
-			margin-left: calc(40em - 50vw) !important;
 			margin-right: calc(40em - 50vw) !important;
 		}
 	}
 	@media screen and (min-width: 90em) {
 		body:not(.toc-inline) .overlarge {
 			/* 4em html margin 30.5em body padding 50em content area */
-			margin-left: 0 !important;
 			margin-right: calc(84.5em - 100vw) !important;
 		}
 	}
@@ -1285,8 +1294,8 @@ Possible extra rowspan handling
     blockquote c-[vi] { color: inherit; } /* Name.Variable.Instance */
     blockquote c-[il] { color: inherit; } /* Literal.Number.Integer.Long */
   </style>
-  <meta content="Bikeshed version 087ea90e1ebd0321c20373d89950d1c6b73d5df1" name="generator">
-  <link href="wg21.link/P1950r90" rel="canonical">
+  <meta content="Bikeshed version 183d4d29e1c92c00aaf58a92ad55ea0b5af9866f" name="generator">
+  <link href="wg21.link/P1950r0" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
 <style>/* style-md-lists */
 
@@ -1497,11 +1506,11 @@ pre .property::before, pre .property::after {
   <div class="head">
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">P1950R0<br><code class="highlight"><c- n>indirect_value</c-></code>: An indirect value-type for C++</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="subtitle"><span class="content">Draft Proposal, <time class="dt-updated" datetime="2020-01-06">2020-01-06</time></span></h2>
+   <h2 class="no-num no-toc no-ref heading settled" id="subtitle"><span class="content">Draft Proposal, <time class="dt-updated" datetime="2020-01-07">2020-01-07</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
-     <dd><a class="u-url" href="wg21.link/P1950r90">wg21.link/P1950r90</a>
+     <dd><a class="u-url" href="wg21.link/P1950r0">wg21.link/P1950r0</a>
      <dt>Issue Tracking:
      <dd><a href="https://github.com/jbcoe/indirect_value/issues">GitHub</a>
      <dt>Authors:
@@ -1529,24 +1538,230 @@ pre .property::before, pre .property::after {
      <ol class="toc">
       <li><a href="#motivation"><span class="secno">2.1</span> <span class="content">Motivation</span></a>
       <li><a href="#completeness"><span class="secno">2.2</span> <span class="content">Completeness</span></a>
+      <li><a href="#impact-on-the-standard"><span class="secno">2.3</span> <span class="content">Impact on the standard</span></a>
      </ol>
-    <li><a href="#technical-specifications"><span class="secno">3</span> <span class="content">Technical specifications</span></a>
-    <li><a href="#references"><span class="secno">4</span> <span class="content">References</span></a>
+    <li>
+     <a href="#technical-specifications"><span class="secno">3</span> <span class="content">Technical specifications</span></a>
+     <ol class="toc">
+      <li><a href="#xx-class-template-default_copy-defaultcopy"><span class="secno">3.1</span> <span class="content">X.X Class template default_copy [default.copy]</span></a>
+      <li>
+       <a href="#xy-class-template-indirect_value-indirect_value"><span class="secno">3.2</span> <span class="content">X.Y Class template indirect_value [indirect_value]</span></a>
+       <ol class="toc">
+        <li><a href="#xy1-class-template-indirect_value-general-indirect_valuegeneral"><span class="secno">3.2.1</span> <span class="content">X.Y.1 Class template indirect_value general [indirect_value.general]</span></a>
+        <li><a href="#xy2-class-template-indirect_value-synopsis-indirect_valuesynopsis"><span class="secno">3.2.2</span> <span class="content">X.Y.2 Class template indirect_value synopsis [indirect_value.synopsis]</span></a>
+        <li><a href="#xy3-class-template-indirect_value-constructors-indirect_valuector"><span class="secno">3.2.3</span> <span class="content">X.Y.3 Class template indirect_value constructors [indirect_value.ctor]</span></a>
+        <li><a href="#xy4-class-template-indirect_value-destructor-indirect_valuedtor"><span class="secno">3.2.4</span> <span class="content">X.Y.4 Class template indirect_value destructor [indirect_value.dtor]</span></a>
+        <li><a href="#xy5-class-template-indirect_value-assignment-indirect_valueassignment"><span class="secno">3.2.5</span> <span class="content">X.Y.5 Class template indirect_value assignment [indirect_value.assignment]</span></a>
+        <li><a href="#xy6-class-template-indirect_value-modifiers-indirect_valuemodifiers"><span class="secno">3.2.6</span> <span class="content">X.Y.6 Class template indirect_value modifiers [indirect_value.modifiers]</span></a>
+        <li><a href="#xy7-class-template-indirect_value-observers-indirect_valueobservers"><span class="secno">3.2.7</span> <span class="content">X.Y.7 Class template indirect_value observers [indirect_value.observers]</span></a>
+       </ol>
+     </ol>
+    <li><a href="#acknowledgements"><span class="secno">4</span> <span class="content">Acknowledgements</span></a>
+    <li><a href="#references"><span class="secno">5</span> <span class="content">References</span></a>
    </ol>
   </nav>
   <main>
    <h2 class="heading settled" data-level="1" id="abstract"><span class="secno">1. </span><span class="content">Abstract</span><a class="self-link" href="#abstract"></a></h2>
     Add a class template, indirect_value, to the standard library to support indirect objects with value-like semantics. 
    <h2 class="heading settled" data-level="2" id="introduction"><span class="secno">2. </span><span class="content">Introduction</span><a class="self-link" href="#introduction"></a></h2>
-    The class template, indirect_value, confers value-like semantics on a freestore allocated object. A indirect_value may hold an object of a class T, copying the indirect_value will copy the object of T, and propagation of constness will propagate from the owning classes to the indirect_value type. 
+    The class template, indirect_value, confers value-like semantics on a freestore allocated object. A indirect_value may hold an object of a class T, copying the indirect_value will copy the object of T, and constness will propagate from the owning classes to the indirect_value type. 
    <h3 class="heading settled" data-level="2.1" id="motivation"><span class="secno">2.1. </span><span class="content">Motivation</span><a class="self-link" href="#motivation"></a></h3>
+   <ul>
+    <li data-md>
+     <p>Deep Copying</p>
+    <li data-md>
+     <p>Pimpl</p>
+   </ul>
+   <p>In C++, when anything in a class definition changes
+The Pimpl idiom has become a well known engineering paradigm in the C++ world</p>
    <h3 class="heading settled" data-level="2.2" id="completeness"><span class="secno">2.2. </span><span class="content">Completeness</span><a class="self-link" href="#completeness"></a></h3>
     Recommended practice for implementation of a Pimpl classes since C++11 has been to store the Pimpl in a std::unique_ptr [H.Sutter] and [S.Meyers]. Smart pointer types in the Standard Library expect that some of the members can be instantiated with incomplete types [H.Hinnant]. Similarly this is the case for indirect_value. 
-   <h2 class="heading settled" data-level="3" id="technical-specifications"><span class="secno">3. </span><span class="content">Technical specifications</span><a class="self-link" href="#technical-specifications"></a></h2>
-   <h2 class="heading settled" data-level="4" id="references"><span class="secno">4. </span><span class="content">References</span><a class="self-link" href="#references"></a></h2>
-   <p>[H.Hinnant] <a href="http://howardhinnant.github.io/incomplete.html">“Incomplete types and shared_ptr / unique_ptr”, Howard Hinnant, 2011, </a></p>
-   <p>[H.Sutter] <a href="https://herbsutter.com/gotw/_100/">"GotW #100: Compilation Firewalls", Herb Sutter, 2011, </a></p>
-   <p>[S. Meyers] Effective Modern C++, Item 22: When using the Pimpl Idiom, define special member functions in the implementation file, Scott Meyers, 2014</p>
+   <h3 class="heading settled" data-level="2.3" id="impact-on-the-standard"><span class="secno">2.3. </span><span class="content">Impact on the standard</span><a class="self-link" href="#impact-on-the-standard"></a></h3>
+    This proposal is a pure library extension. It requires additions to be made to the standard library header 
+   <memory>
+    . 
+    <h2 class="heading settled" data-level="3" id="technical-specifications"><span class="secno">3. </span><span class="content">Technical specifications</span><a class="self-link" href="#technical-specifications"></a></h2>
+    <h3 class="heading settled" data-level="3.1" id="xx-class-template-default_copy-defaultcopy"><span class="secno">3.1. </span><span class="content">X.X Class template default_copy [default.copy]</span><a class="self-link" href="#xx-class-template-default_copy-defaultcopy"></a></h3>
+<pre class="highlight"><c- k>namespace</c-> <c- n>std</c-> <c- p>{</c->
+    <c- k>template</c-> <c- o>&lt;</c-><c- k>class</c-> <c- nc>T</c-><c- o>></c->
+    <c- k>struct</c-> <c- n>default_copy</c-> <c- p>{</c->
+        <c- n>T</c-><c- o>*</c-> <c- k>operator</c-><c- p>()(</c-><c- k>const</c-> <c- n>T</c-><c- o>&amp;</c-> <c- n>t</c-><c- p>)</c-> <c- k>const</c-><c- p>;</c->
+    <c- p>};</c->
+<c- p>}</c-> <c- c1>// namespace std</c->
+</pre>
+    The class template default_copy serves as the default copier for the class
+template polymorphic_value.
+The template parameter <code class="highlight"><c- n>T</c-></code> of <code class="highlight"><c- n>default_copy</c-></code> may be an incomplete type. 
+    <p><code class="highlight"><c- n>T</c-><c- o>*</c-> <c- nf>operator</c-><c- p>()(</c-><c- k>const</c-> <c- n>T</c-><c- o>&amp;</c-> <c- n>t</c-><c- p>)</c-> <c- k>const</c-><c- p>;</c-></code></p>
+    <ul>
+     <li data-md>
+      <p>Returns: <code class="highlight"><c- k>new</c-> <c- nf>T</c-><c- p>(</c-><c- n>t</c-><c- p>);</c-></code></p>
+    </ul>
+    <h3 class="heading settled" data-level="3.2" id="xy-class-template-indirect_value-indirect_value"><span class="secno">3.2. </span><span class="content">X.Y Class template indirect_value [indirect_value]</span><a class="self-link" href="#xy-class-template-indirect_value-indirect_value"></a></h3>
+    <h4 class="heading settled" data-level="3.2.1" id="xy1-class-template-indirect_value-general-indirect_valuegeneral"><span class="secno">3.2.1. </span><span class="content">X.Y.1 Class template indirect_value general [indirect_value.general]</span><a class="self-link" href="#xy1-class-template-indirect_value-general-indirect_valuegeneral"></a></h4>
+     An indirect_value is an object that owns another object and manages that other object through a pointer. More precisely, an indirect value is an object <strong>v</strong> that stores a pointer to a second object <strong>p</strong> and will dispose of <strong>p</strong> when <strong>v</strong> is itself destroyed (e.g., when leaving block scope (9.7)). In this context, <strong>v</strong> is said to own <strong>p</strong>. 
+    <p>An indirect_value object is empty if it does not own a pointer.</p>
+    <p>Copying a non-empty indirect_value will copy the owned object so that the copied indirect_value will have its own unique copy of the owned object.</p>
+    <p>Copying from an empty indirect_value produces another empty indirect_value.</p>
+    <p>Copying and disposal of the owned object can be customised by supplying a copier and deleter.</p>
+    <p>The template parameter T of indirect_value must be a non-union class type.</p>
+    <p>The template parameter T of indirect_value may be an incomplete type.</p>
+    <p><em>[Note: Implementations are encouraged to avoid the use of dynamic memory for ownership of small objects.]</em></p>
+    <h4 class="heading settled" data-level="3.2.2" id="xy2-class-template-indirect_value-synopsis-indirect_valuesynopsis"><span class="secno">3.2.2. </span><span class="content">X.Y.2 Class template indirect_value synopsis [indirect_value.synopsis]</span><a class="self-link" href="#xy2-class-template-indirect_value-synopsis-indirect_valuesynopsis"></a></h4>
+<pre class="highlight">    <c- k>template</c-> <c- o>&lt;</c-><c- k>class</c-> <c- nc>T</c-><c- p>,</c-> <c- k>class</c-> <c- nc>C</c-> <c- o>=</c-> <c- n>std</c-><c- o>::</c-><c- n>default_copy</c-><c- o>&lt;</c-><c- n>T</c-><c- o>></c-><c- p>,</c-> <c- k>class</c-> <c- nc>D</c-> <c- o>=</c-> <c- n>std</c-><c- o>::</c-><c- n>default_delete</c-><c- o>&lt;</c-><c- n>T</c-><c- o>>></c->
+    <c- k>class</c-> <c- nc>indirect_value</c-> <c- p>{</c->
+    <c- k>public</c-><c- o>:</c->
+        <c- k>using</c-> <c- n>element_type</c-> <c- o>=</c-> <c- n>T</c-><c- p>;</c->
+        <c- c1>// Constructors</c->
+        <c- k>constexpr</c-> <c- nf>indirect_value</c-><c- p>()</c-> <c- k>noexcept</c-><c- p>;</c->
+        <c- k>explicit</c-> <c- nf>indirect_value</c-><c- p>(</c-><c- n>T</c-><c- o>*</c-> <c- n>p</c-><c- p>,</c-> <c- n>C</c-> <c- n>c</c-><c- o>=</c-><c- n>C</c-><c- p>{},</c-> <c- n>D</c-> <c- n>d</c-><c- o>=</c-><c- n>D</c-><c- p>{});</c->
+
+        <c- n>indirect_value</c-><c- p>(</c-><c- k>const</c-> <c- n>indirect_value</c-><c- o>&amp;</c-> <c- n>p</c-><c- p>);</c->
+        <c- n>indirect_value</c-><c- p>(</c-><c- n>indirect_value</c-><c- o>&amp;&amp;</c-> <c- n>p</c-><c- p>)</c-> <c- k>noexcept</c-><c- p>;</c->
+
+        <c- c1>// Destructor</c->
+        <c- o>~</c-><c- n>indirect_value</c-><c- p>();</c->
+
+        <c- c1>// Assignment</c->
+        <c- n>indirect_value</c-><c- o>&amp;</c-> <c- k>operator</c-><c- o>=</c-><c- p>(</c-><c- k>const</c-> <c- n>indirect_value</c-><c- o>&amp;</c-> <c- n>p</c-><c- p>);</c->
+        <c- n>indirect_value</c-><c- o>&amp;</c-> <c- k>operator</c-><c- o>=</c-><c- p>(</c-><c- n>indirect_value</c-><c- o>&amp;&amp;</c-> <c- n>p</c-><c- p>)</c-> <c- k>noexcept</c-><c- p>;</c->
+
+        <c- c1>// Modifiers</c->
+        <c- b>void</c-> <c- nf>swap</c-><c- p>(</c-><c- n>indirect_value</c-><c- o>&lt;</c-><c- n>T</c-><c- o>>&amp;</c-> <c- n>p</c-><c- p>)</c-> <c- k>noexcept</c-><c- p>;</c->
+
+        <c- c1>// Observers</c->
+        <c- n>T</c-><c- o>&amp;</c-> <c- k>operator</c-><c- o>*</c-><c- p>();</c->
+        <c- n>T</c-><c- o>*</c-> <c- k>operator</c-><c- o>-></c-><c- p>()</c-> <c- k>noexcept</c-><c- p>;</c->
+        <c- k>const</c-> <c- n>T</c-><c- o>&amp;</c-> <c- k>operator</c-><c- o>*</c-><c- p>()</c-> <c- k>const</c-><c- p>;</c->
+        <c- k>const</c-> <c- n>T</c-><c- o>*</c-> <c- k>operator</c-><c- o>-></c-><c- p>()</c-> <c- k>const</c-> <c- k>noexcept</c-><c- p>;</c->
+        <c- k>explicit</c-> <c- k>operator</c-> <c- nf>bool</c-><c- p>()</c-> <c- k>const</c-> <c- k>noexcept</c-><c- p>;</c->
+    <c- p>};</c->
+
+    <c- c1>// indirect_value creation</c->
+    <c- k>template</c-> <c- o>&lt;</c-><c- k>class</c-> <c- nc>T</c-><c- p>,</c-> <c- k>class</c-> ...<c- nc>Ts</c-><c- o>></c-> <c- n>indirect_value</c-><c- o>&lt;</c-><c- n>T</c-><c- o>></c->
+    <c- n>make_indirect_value</c-><c- p>(</c-><c- n>Ts</c-><c- o>&amp;&amp;</c-> <c- p>...</c-><c- n>ts</c-><c- p>);</c->
+
+    <c- c1>// indirect_value specialized algorithms</c->
+    <c- k>template</c-><c- o>&lt;</c-><c- k>class</c-> <c- nc>T</c-><c- o>></c->
+    <c- b>void</c-> <c- n>swap</c-><c- p>(</c-><c- n>indirect_value</c-><c- o>&lt;</c-><c- n>T</c-><c- o>>&amp;</c-> <c- n>p</c-><c- p>,</c-> <c- n>indirect_value</c-><c- o>&lt;</c-><c- n>T</c-><c- o>>&amp;</c-> <c- n>u</c-><c- p>)</c-> <c- k>noexcept</c-><c- p>;</c->
+
+<c- p>}</c-> <c- c1>// end namespace std</c->
+</pre>
+    <h4 class="heading settled" data-level="3.2.3" id="xy3-class-template-indirect_value-constructors-indirect_valuector"><span class="secno">3.2.3. </span><span class="content">X.Y.3 Class template indirect_value constructors [indirect_value.ctor]</span><a class="self-link" href="#xy3-class-template-indirect_value-constructors-indirect_valuector"></a></h4>
+    <p><code class="highlight"><c- k>constexpr</c-> <c- nf>indirect_value</c-><c- p>()</c-> <c- k>noexcept</c-><c- p>;</c-></code></p>
+    <ul>
+     <li data-md>
+      <p>Remarks: The method shall work with incomplete pointer type for T.</p>
+     <li data-md>
+      <p>Effects: Constructs an empty indirect_value.</p>
+     <li data-md>
+      <p>Postconditions: bool(*this) == false</p>
+    </ul>
+    <p><code class="highlight"><c- k>explicit</c-> <c- nf>indirect_value</c-><c- p>(</c-><c- n>T</c-><c- o>*</c-> <c- n>p</c-><c- p>,</c-> <c- n>C</c-> <c- n>c</c-><c- o>=</c-><c- n>C</c-><c- p>{},</c-> <c- n>D</c-> <c- n>d</c-><c- o>=</c-><c- n>D</c-><c- p>{});</c-></code></p>
+    <ul>
+     <li data-md>
+      <p>Effects: Creates a indirect_value object that owns the pointer p. If p is non-null then the copier and deleter of the indirect_value constructed is moved from c and d.</p>
+     <li data-md>
+      <p>Requires: C and D satisfy the requirements of CopyConstructible. If p is non-null then the expression c(<em>p) returns an object of type T</em>. The expression d(p) is well formed, has well defined behavior, and does not throw exceptions.</p>
+     <li data-md>
+      <p>Postconditions: bool(*this) == bool(p).</p>
+     <li data-md>
+      <p>Remarks: A custom copier and deleter are said to be ‘present’ in a polymorphic_value initialised with this constructor.</p>
+    </ul>
+    <p><code class="highlight"><c- n>indirect_value</c-><c- p>(</c-><c- k>const</c-> <c- n>indirect_value</c-><c- o>&amp;</c-> <c- n>p</c-><c- p>);</c-></code></p>
+    <ul>
+     <li data-md>
+      <p>Effects: Creates a polymorphic_value object that owns a copy of the object managed by p. The copy is created by the copier in p. If p has a custom copier and deleter then the custom copier and deleter of the indirect_value constructed are copied from those in p.</p>
+     <li data-md>
+      <p>Throws: Any exception thrown by the copier or bad_alloc if required storage cannot be obtained.</p>
+     <li data-md>
+      <p>Postconditions: bool(*this) == bool(p).</p>
+    </ul>
+    <p><code class="highlight"><c- n>indirect_value</c-><c- p>(</c-><c- n>indirect_value</c-><c- o>&amp;&amp;</c-> <c- n>p</c-><c- p>)</c-> <c- k>noexcept</c-><c- p>;</c-></code></p>
+    <ul>
+     <li data-md>
+      <p>Effects: Move-constructs a indirect_value instance from p. If p has a custom copier and deleter then the copier and deleter of the indirect_value constructed are the same as those in p.</p>
+     <li data-md>
+      <p>Postconditions: *this contains the old value of p. p is empty.</p>
+     <li data-md>
+      <p>Remarks: The method shall work with incomplete pointer type for T.</p>
+    </ul>
+    <h4 class="heading settled" data-level="3.2.4" id="xy4-class-template-indirect_value-destructor-indirect_valuedtor"><span class="secno">3.2.4. </span><span class="content">X.Y.4 Class template indirect_value destructor [indirect_value.dtor]</span><a class="self-link" href="#xy4-class-template-indirect_value-destructor-indirect_valuedtor"></a></h4>
+     <code class="highlight"><c- o>~</c-><c- n>indirect_value</c-><c- p>();</c-></code> 
+    <ul>
+     <li data-md>
+      <p>Effects: If get() == nullptr there are no effects. If a custom deleter d is present then d(p) is called and the copier and deleter are destroyed. Otherwise the destructor of the managed object is called.</p>
+    </ul>
+    <h4 class="heading settled" data-level="3.2.5" id="xy5-class-template-indirect_value-assignment-indirect_valueassignment"><span class="secno">3.2.5. </span><span class="content">X.Y.5 Class template indirect_value assignment [indirect_value.assignment]</span><a class="self-link" href="#xy5-class-template-indirect_value-assignment-indirect_valueassignment"></a></h4>
+     <code class="highlight"><c- n>indirect_value</c-><c- o>&amp;</c-> <c- k>operator</c-><c- o>=</c-><c- p>(</c-><c- k>const</c-> <c- n>indirect_value</c-><c- o>&amp;</c-> <c- n>p</c-><c- p>);</c-></code> 
+    <ul>
+     <li data-md>
+      <p>Effects: <em>this owns a copy of the resource managed by p. If p has a custom copier and deleter then the copy is created by the copier in p, and the copier and deleter of </em>this are copied from those in p. Otherwise the resource managed by *this is initialised by the copy constructor of the resource managed by p.</p>
+     <li data-md>
+      <p>Throws: Any exception thrown by the copier or bad_alloc if required storage cannot be obtained.</p>
+     <li data-md>
+      <p>Returns: *this.</p>
+     <li data-md>
+      <p>Postconditions: bool(*this) == bool(p).</p>
+    </ul>
+    <p><code class="highlight"><c- n>indirect_value</c-><c- o>&amp;</c-> <c- k>operator</c-><c- o>=</c-><c- p>(</c-><c- n>indirect_value</c-><c- o>&amp;&amp;</c-> <c- n>p</c-><c- p>)</c-> <c- k>noexcept</c-><c- p>;</c-></code></p>
+    <ul>
+     <li data-md>
+      <p>Effects: Ownership of the resource managed by p is transferred to this. If p has a custom copier and deleter then the copier and deleter of *this is the same as those in p.</p>
+     <li data-md>
+      <p>Returns: *this.</p>
+     <li data-md>
+      <p>Postconditions: *this contains the old value of p. p is empty.</p>
+     <li data-md>
+      <p>Remarks: The method shall work with incomplete pointer type for T.</p>
+    </ul>
+    <h4 class="heading settled" data-level="3.2.6" id="xy6-class-template-indirect_value-modifiers-indirect_valuemodifiers"><span class="secno">3.2.6. </span><span class="content">X.Y.6 Class template indirect_value modifiers [indirect_value.modifiers]</span><a class="self-link" href="#xy6-class-template-indirect_value-modifiers-indirect_valuemodifiers"></a></h4>
+     <code class="highlight"><c- b>void</c-> <c- nf>swap</c-><c- p>(</c-><c- n>indirect_value</c-><t><c- o>&amp;</c-> <c- n>p</c-><c- p>)</c-> <c- k>noexcept</c-><c- p>;</c-></t></code> 
+    <ul>
+     <li data-md>
+      <p>Effects: Exchanges the contents of p and *this.</p>
+     <li data-md>
+      <p>Remarks: The method shall work with incomplete pointer type for T.</p>
+    </ul>
+    <h4 class="heading settled" data-level="3.2.7" id="xy7-class-template-indirect_value-observers-indirect_valueobservers"><span class="secno">3.2.7. </span><span class="content">X.Y.7 Class template indirect_value observers [indirect_value.observers]</span><a class="self-link" href="#xy7-class-template-indirect_value-observers-indirect_valueobservers"></a></h4>
+<pre class="highlight"><c- n>T</c-><c- o>&amp;</c-> <c- k>operator</c-><c- o>*</c-><c- p>();</c->
+<c- k>const</c-> <c- n>T</c-><c- o>&amp;</c-> <c- k>operator</c-><c- o>*</c-><c- p>()</c-> <c- k>const</c-><c- p>;</c->
+</pre>
+    <ul>
+     <li data-md>
+      <p>Requires: bool(*this).</p>
+     <li data-md>
+      <p>Returns: A reference to the owned object.</p>
+    </ul>
+<pre class="highlight"><c- n>T</c-><c- o>*</c-> <c- k>operator</c-><c- o>-></c-><c- p>()</c-> <c- k>noexcept</c-><c- p>;</c->
+<c- k>const</c-> <c- n>T</c-><c- o>*</c-> <c- k>operator</c-><c- o>-></c-><c- p>()</c-> <c- k>const</c-> <c- k>noexcept</c-><c- p>;</c->
+</pre>
+    <ul>
+     <li data-md>
+      <p>Requires: bool(*this).</p>
+     <li data-md>
+      <p>Returns: A pointer to the owned object.</p>
+     <li data-md>
+      <p>Remarks: The method shall work with incomplete pointer type for T.</p>
+    </ul>
+    <p><code class="highlight"><c- k>explicit</c-> <c- k>operator</c-> <c- nf>bool</c-><c- p>()</c-> <c- k>const</c-> <c- k>noexcept</c-><c- p>;</c-></code></p>
+    <ul>
+     <li data-md>
+      <p>Returns: false if the polymorphic_value is empty, otherwise true.</p>
+     <li data-md>
+      <p>Remarks: The method shall work with incomplete pointer type for T.</p>
+    </ul>
+    <h2 class="heading settled" data-level="4" id="acknowledgements"><span class="secno">4. </span><span class="content">Acknowledgements</span><a class="self-link" href="#acknowledgements"></a></h2>
+     The authors would like to thank Thomas Russell, and 
+    <more come to>
+      for useful discussion. 
+     <h2 class="heading settled" data-level="5" id="references"><span class="secno">5. </span><span class="content">References</span><a class="self-link" href="#references"></a></h2>
+     <p>[H.Hinnant] <a href="http://howardhinnant.github.io/incomplete.html">“Incomplete types and shared_ptr / unique_ptr”, Howard Hinnant, 2011, </a></p>
+     <p>[H.Sutter] <a href="https://herbsutter.com/gotw/_100/">"GotW #100: Compilation Firewalls", Herb Sutter, 2011, </a></p>
+     <p>[Impl] <a href="https://github.com/jbcoe/indirect_value">Reference implementation: indirect_value, J.B.Coe</a></p>
+     <p>[S. Meyers] Effective Modern C++, Item 22: When using the Pimpl Idiom, define special member functions in the implementation file, Scott Meyers, 2014</p>
+    </more>
+   </memory>
   </main>
 <script>
 (function() {

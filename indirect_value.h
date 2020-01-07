@@ -42,20 +42,20 @@ class indirect_value : private indirect_value_base<T, C> {
   indirect_value() = default;
 
   template <class... Ts>
-  indirect_value(std::in_place_t, Ts&&... ts) {
+  explicit indirect_value(std::in_place_t, Ts&&... ts) {
     ptr_ = std::unique_ptr<T, D>(new T(std::forward<Ts>(ts)...), D{});
   }
 
-  indirect_value(T* t, C c = C{}, D d = D{}) : base(std::move(c)), ptr_(std::unique_ptr<T, D>(t, std::move(d))) {
+  explicit indirect_value(T* t, C c = C{}, D d = D{}) noexcept : base(std::move(c)), ptr_(std::unique_ptr<T, D>(t, std::move(d))) {
   }
 
-  indirect_value(const indirect_value& i) : base(get_c()) {
+  explicit indirect_value(const indirect_value& i) : base(get_c()) {
     if (i.ptr_) { 
       ptr_ = std::unique_ptr<T, D>(get_c()(*i.ptr_), D{});
     }
   }
 
-  indirect_value(indirect_value&& i) noexcept : base(std::move(i)), ptr_(std::exchange(i.ptr_, nullptr)) {}
+  explicit indirect_value(indirect_value&& i) noexcept : base(std::move(i)), ptr_(std::exchange(i.ptr_, nullptr)) {}
 
   indirect_value& operator = (const indirect_value& i) {
     base::operator=(i);
@@ -78,9 +78,9 @@ class indirect_value : private indirect_value_base<T, C> {
 
   ~indirect_value() = default;
 
-  T* operator->() { return ptr_.operator->(); }
+  T* operator->() noexcept { return ptr_.operator->(); }
 
-  const T* operator->() const { return ptr_.operator->(); }
+  const T* operator->() const noexcept { return ptr_.operator->(); }
 
   T& operator*() { return *ptr_; }
 
