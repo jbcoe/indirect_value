@@ -1587,55 +1587,57 @@ The Pimpl idiom has become a well-known engineering paradigm in the C++ world
       <th>Incomplete/Complete
     <tbody>
      <tr>
-      <td>indirect_value()
+      <td><code class="highlight"><c- n>indirect_value</c-><c- p>()</c-></code>
       <td>Default constructor
       <td>Incomplete
      <tr>
-      <td>indirect_value(const indirect_value&amp;)
+      <td><code class="highlight"><c- n>indirect_value</c-><c- p>(</c-><c- k>const</c-> <c- n>indirect_value</c-><c- o>&amp;</c-><c- p>)</c-></code>
       <td>Copy-constructor
       <td>Complete
      <tr>
-      <td>indirect_value(indirect_value&amp;&amp;)
+      <td><code class="highlight"><c- n>indirect_value</c-><c- p>(</c-><c- n>indirect_value</c-><c- o>&amp;&amp;</c-><c- p>)</c-></code>
       <td>Move-constructor
       <td>Incomplete
      <tr>
-      <td>~indirect_value()
+      <td><code class="highlight"><c- o>~</c-><c- n>indirect_value</c-><c- p>()</c-></code>
       <td>Destructor
       <td>Complete
      <tr>
-      <td>indirect_value&amp; indirect_value::operator=(const indirect_value&amp;)
+      <td><code class="highlight"><c- n>indirect_value</c-><c- o>&amp;</c-> <c- n>indirect_value</c-><c- o>::</c-><c- k>operator</c-><c- o>=</c-><c- p>(</c-><c- k>const</c-> <c- n>indirect_value</c-><c- o>&amp;</c-><c- p>)</c-></code>
       <td>Copy-assignment
       <td>Complete
      <tr>
-      <td>indirect_value&amp; indirect_value::operator=(indirect_value&amp;&amp;)
+      <td><code class="highlight"><c- n>indirect_value</c-><c- o>&amp;</c-> <c- n>indirect_value</c-><c- o>::</c-><c- k>operator</c-><c- o>=</c-><c- p>(</c-><c- n>indirect_value</c-><c- o>&amp;&amp;</c-><c- p>)</c-></code>
       <td>Move-assignment
       <td>Incomplete 
      <tr>
-      <td>
-       <p>T&amp; operator*()</p>
-       <p>const T&amp; operator*() </p>
+      <td><code class="highlight"><c- n>T</c-><c- o>&amp;</c-> <c- k>operator</c-><c- o>*</c-><c- p>()</c-></code>
       <td>Indirection-operator
       <td>Incomplete 
      <tr>
-      <td>
-       <p>T* operator->() noexcept</p>
-       <p>const T* operator->() const noexcept</p>
+      <td><code class="highlight"><c- k>const</c-> <c- n>T</c-><c- o>&amp;</c-> <c- k>operator</c-><c- o>*</c-><c- p>()</c-> <c- k>const</c-></code>
+      <td>Indirection-operator
+      <td>Incomplete 
+     <tr>
+      <td><code class="highlight"><c- n>T</c-><c- o>*</c-> <c- k>operator</c-><c- o>-></c-><c- p>()</c-> <c- k>noexcept</c-></code>
       <td>Member-of-pointer-operator 
       <td>Incomplete 
      <tr>
-      <td>explicit operator bool() const noexcept
+      <td><code class="highlight"><c- k>const</c-> <c- n>T</c-><c- o>*</c-> <c- k>operator</c-><c- o>-></c-><c- p>()</c-> <c- k>const</c-> <c- k>noexcept</c-></code>
+      <td>Member-of-pointer-operator 
+      <td>Incomplete 
+     <tr>
+      <td><code class="highlight"><c- k>explicit</c-> <c- k>operator</c-> <c- b>bool</c-><c- p>()</c-> <c- k>const</c-> <c- k>noexcept</c-></code>
       <td>Bool-operator
       <td>Incomplete
      <tr>
-      <td>
-       void swap(indirect_value
-       <t>&amp; p) noexcept</t>
+      <td><code class="highlight"><c- b>void</c-> <c- n>swap</c-><c- p>(</c-><c- n>indirect_value</c-><t><c- o>&amp;</c-> <c- n>p</c-><c- p>)</c-> <c- k>noexcept</c-></t></code>
       <td>Swap
       <td>Incomplete
    </table>
    <h3 class="heading settled" data-level="2.6" id="impact-on-the-standard"><span class="secno">2.6. </span><span class="content">Impact on the standard</span><a class="self-link" href="#impact-on-the-standard"></a></h3>
-    This proposal is a pure library extension. It requires additions to be made to the standard library header 
-   <memory>
+    This proposal is a pure library extension. It requires additions to be made to the standard library header \
+   <memoryU0005C>
     . 
     <h2 class="heading settled" data-level="3" id="technical-specifications"><span class="secno">3. </span><span class="content">Technical specifications</span><a class="self-link" href="#technical-specifications"></a></h2>
     <h3 class="heading settled" data-level="3.1" id="xx-class-template-default_copy-defaultcopy"><span class="secno">3.1. </span><span class="content">X.X Class template default_copy [default.copy]</span><a class="self-link" href="#xx-class-template-default_copy-defaultcopy"></a></h3>
@@ -1821,7 +1823,7 @@ The template parameter <code class="highlight"><c- n>T</c-></code> of <code clas
      <p>[W. Brown] <a href="open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3339.pdf">A Preliminary Proposal for a Deep-Copying Smart Pointer, Walter E. Brown, 2012</a></p>
      <p>[Meneide et al] <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1132r6.html">out_ptr - a scalable output pointer abstraction,JeanHeyd Meneide, Todor Buyukliev, Isabella Muerte, 2019</a></p>
     </more>
-   </memory>
+   </memoryU0005C>
   </main>
 <script>
 (function() {
