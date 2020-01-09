@@ -1294,7 +1294,7 @@ Possible extra rowspan handling
     blockquote c-[vi] { color: inherit; } /* Name.Variable.Instance */
     blockquote c-[il] { color: inherit; } /* Literal.Number.Integer.Long */
   </style>
-  <meta content="Bikeshed version 183d4d29e1c92c00aaf58a92ad55ea0b5af9866f" name="generator">
+  <meta content="Bikeshed version 6a4c097ae8b731ee02752a258e8ac5ffbb752299" name="generator">
   <link href="wg21.link/P1950r0" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
 <style>/* style-md-lists */
@@ -1506,7 +1506,7 @@ pre .property::before, pre .property::after {
   <div class="head">
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">P1950R0<br><code class="highlight"><c- n>indirect_value</c-></code>: An indirect value-type for C++</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="subtitle"><span class="content">Draft Proposal, <time class="dt-updated" datetime="2020-01-07">2020-01-07</time></span></h2>
+   <h2 class="no-num no-toc no-ref heading settled" id="subtitle"><span class="content">Draft Proposal, <time class="dt-updated" datetime="2020-01-09">2020-01-09</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -1537,11 +1537,12 @@ pre .property::before, pre .property::after {
      <a href="#introduction"><span class="secno">2</span> <span class="content">Introduction</span></a>
      <ol class="toc">
       <li><a href="#motivation"><span class="secno">2.1</span> <span class="content">Motivation</span></a>
-      <li><a href="#deep-copying"><span class="secno">2.2</span> <span class="content">Deep Copying</span></a>
-      <li><a href="#pimpl"><span class="secno">2.3</span> <span class="content">Pimpl</span></a>
-      <li><a href="#why-polymophic_value-does-not-solve-this-problem-ie-not-paying-for-what-you-dont-use"><span class="secno">2.4</span> <span class="content">Why polymophic_value does not solve this problem, i.e. not paying for what you don’t use.</span></a>
-      <li><a href="#completeness-of-t"><span class="secno">2.5</span> <span class="content">Completeness of T*</span></a>
-      <li><a href="#impact-on-the-standard"><span class="secno">2.6</span> <span class="content">Impact on the standard</span></a>
+      <li><a href="#perfect-pimpl"><span class="secno">2.2</span> <span class="content">Perfect-Pimpl</span></a>
+      <li><a href="#deep-copying"><span class="secno">2.3</span> <span class="content">Deep Copying</span></a>
+      <li><a href="#why-polymorphic_value-does-not-solve-this-problem-ie-not-paying-for-what-you-dont-use"><span class="secno">2.4</span> <span class="content">Why polymorphic_value does not solve this problem, i.e. not paying for what you don’t use.</span></a>
+      <li><a href="#prior-art"><span class="secno">2.5</span> <span class="content">Prior Art</span></a>
+      <li><a href="#completeness-of-t"><span class="secno">2.6</span> <span class="content">Completeness of T*</span></a>
+      <li><a href="#impact-on-the-standard"><span class="secno">2.7</span> <span class="content">Impact on the standard</span></a>
      </ol>
     <li>
      <a href="#technical-specifications"><span class="secno">3</span> <span class="content">Technical specifications</span></a>
@@ -1569,16 +1570,100 @@ pre .property::before, pre .property::after {
    <h2 class="heading settled" data-level="2" id="introduction"><span class="secno">2. </span><span class="content">Introduction</span><a class="self-link" href="#introduction"></a></h2>
     The class template, indirect_value, confers value-like semantics on a freestore allocated object. An indirect_value may hold an object of a class T, copying the indirect_value will copy the object of T, and constness will propagate from the owning classes to the indirect_value type. 
    <h3 class="heading settled" data-level="2.1" id="motivation"><span class="secno">2.1. </span><span class="content">Motivation</span><a class="self-link" href="#motivation"></a></h3>
-   <p>The C++ standard includes support for numerous smart pointer templates, with support for new addition ongoing [Meneide et al].  One common use for these types is as the pointer-to-implementation in the Pimpl idiom [H.Sutter]. When the application design requires deep-copy semantic when the type is moved, existing pointer types, <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>unique_ptr</c-></code> and <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>shared_ptr</c-></code> are not the correct tool for the job.</p>
+   <p>The C++ standard includes support for numerous smart pointer templates, with support for new addition ongoing [Meneide et al].  One common use for these types is as the pointer-to-implementation in the Pimpl idiom [H.Sutter 11]. If the application design requires deep-copy semantic when the type is moved, existing pointer types, <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>unique_ptr</c-></code> and <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>shared_ptr</c-></code> are not the correct tools for the job.</p>
    <p>One option for value semantics is the use of <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>experimental</c-><c- o>::</c-><c- n>polymophic_value</c-></code>. However, <code class="highlight"><c- n>polymophic_value</c-></code> provides a solution to the <em>polymorphic copying problem</em>, which requires the use of type-erasure.  Such implementation details incur a cost. However, use of the Pimpl idiom will likely not involve polymorphic types.  As such using <code class="highlight"><c- n>polymophic_value</c-></code> means paying for features that are not used.</p>
    <p>In this case, what is needed is value semantics for an indirectly owned value.  This paper proposes the <code class="highlight"><c- n>indirect_value</c-></code> template for future standardisation. The issues to be addressed will be examined in further detail, prior art on the subject will be discussed and finally, open questions posed.</p>
-   <h3 class="heading settled" data-level="2.2" id="deep-copying"><span class="secno">2.2. </span><span class="content">Deep Copying</span><a class="self-link" href="#deep-copying"></a></h3>
-   <h3 class="heading settled" data-level="2.3" id="pimpl"><span class="secno">2.3. </span><span class="content">Pimpl</span><a class="self-link" href="#pimpl"></a></h3>
-    In C++, when anything in a class definition changes
-The Pimpl idiom has become a well-known engineering paradigm in the C++ world 
-   <h3 class="heading settled" data-level="2.4" id="why-polymophic_value-does-not-solve-this-problem-ie-not-paying-for-what-you-dont-use"><span class="secno">2.4. </span><span class="content">Why polymophic_value does not solve this problem, i.e. not paying for what you don’t use.</span><a class="self-link" href="#why-polymophic_value-does-not-solve-this-problem-ie-not-paying-for-what-you-dont-use"></a></h3>
-   <h3 class="heading settled" data-level="2.5" id="completeness-of-t"><span class="secno">2.5. </span><span class="content">Completeness of T*</span><a class="self-link" href="#completeness-of-t"></a></h3>
-    Recommended practice for pointer-to-implementation of Pimpl classes since C++11 has been to store the pointer-to-implementation in a std::unique_ptr [S. Meyers]. Smart pointer types in the Standard Library expect that some of the members can be instantiated with incomplete types [H.Hinnant]. Similarly, this is the case for indirect_value, the table outlines the expected behaviour for incomplete types: 
+   <h3 class="heading settled" data-level="2.2" id="perfect-pimpl"><span class="secno">2.2. </span><span class="content">Perfect-Pimpl</span><a class="self-link" href="#perfect-pimpl"></a></h3>
+    In C++, when anything in a class definition changes dependent classes require recompilation. As early as 1992 the Handle/Body idiom was suggested to break this dependency [J. Coplien]. From this pattern the Pimpl idiom was specialised [H.Sutter 98].  Almost three decades on since these ideas started circulating implementation of the Pimpl idiom requires thought about implementation details around copying and to support this feature require user intervention. 
+<pre class="highlight"><c- c1>// Header file</c->
+<c- k>class</c-> <c- nc>widget</c-> <c- p>{</c->
+<c- k>public</c-><c- o>:</c->
+    <c- n>widget</c-><c- p>();</c->
+    <c- o>~</c-><c- n>widget</c-><c- p>();</c->
+<c- k>private</c-><c- o>:</c->
+    <c- k>class</c-> <c- nc>impl</c-><c- p>;</c->
+    <c- n>unique_ptr</c-><c- o>&lt;</c-><c- n>impl</c-><c- o>></c-> <c- n>pimpl</c-><c- p>;</c->
+<c- p>};</c->
+ 
+<c- c1>// Implementation file</c->
+<c- k>class</c-> <c- nc>widget</c-><c- o>::</c-><c- n>impl</c-> <c- p>{</c->
+    <c- c1>// :::</c->
+<c- p>};</c->
+ 
+<c- n>widget</c-><c- o>::</c-><c- n>widget</c-><c- p>()</c-> <c- o>:</c-> <c- n>pimpl</c-><c- p>{</c-> <c- n>std</c-><c- o>::</c-><c- n>make_unique</c-><c- o>&lt;</c-><c- n>impl</c-><c- o>></c-><c- p>(</c-> <c- d>/*...*/</c->  <c- p>}</c-> <c- p>{</c-> <c- p>}</c->
+<c- n>widget</c-><c- o>::~</c-><c- n>widget</c-><c- p>()</c-> <c- o>=</c-> <c- k>default</c-><c- p>;</c->
+</pre>
+   <p>Using std::unique_ptr the exposed class gets compiler generated move semantics, but not copy semantic.  If these are required the user must now manually define a copy-constructor and assignment operator.</p>
+<pre class="highlight"><c- c1>// Header file</c->
+<c- k>class</c-> <c- nc>widget</c-> <c- p>{</c->
+<c- k>public</c-><c- o>:</c->
+    <c- n>widget</c-><c- p>();</c->
+    <c- o>~</c-><c- n>widget</c-><c- p>();</c->
+
+    <c- n>widget</c-><c- p>(</c-><c- k>const</c-> <c- n>widget</c-><c- o>&amp;</c-><c- p>);</c->
+    <c- n>widget</c-><c- o>&amp;</c-> <c- k>operator</c-><c- p>(</c-><c- k>const</c-> <c- n>widget</c-><c- o>&amp;</c-><c- p>);</c->
+<c- k>private</c-><c- o>:</c->
+    <c- k>class</c-> <c- nc>impl</c-><c- p>;</c->
+    <c- n>unique_ptr</c-><c- o>&lt;</c-><c- n>impl</c-><c- o>></c-> <c- n>pimpl</c-><c- p>;</c->
+<c- p>};</c->
+ 
+<c- c1>// Implementation file</c->
+<c- k>class</c-> <c- nc>widget</c-><c- o>::</c-><c- n>impl</c-> <c- p>{</c->
+    <c- c1>// :::</c->
+<c- p>};</c->
+ 
+<c- n>widget</c-><c- o>::</c-><c- n>widget</c-><c- p>()</c-> <c- o>:</c-> <c- n>pimpl</c-><c- p>{</c-> <c- n>std</c-><c- o>::</c-><c- n>make_unique</c-><c- o>&lt;</c-><c- n>impl</c-><c- o>></c-><c- p>(</c-> <c- d>/*...*/</c->  <c- p>}</c-> <c- p>{</c-> <c- p>}</c->
+<c- n>widget</c-><c- o>::~</c-><c- n>widget</c-><c- p>()</c-> <c- o>=</c-> <c- k>default</c-><c- p>;</c->
+
+<c- n>widget</c-><c- p>(</c-><c- k>const</c-> <c- n>widget</c-><c- o>&amp;</c-> <c- n>rhs</c-><c- p>)</c->
+<c- p>{</c->
+    <c- k>if</c-> <c- p>(</c-><c- n>rhs</c-><c- p>.</c-><c- n>pimpl</c-><c- p>)</c-> <c- p>{</c-> 
+      <c- n>pimpl</c-> <c- o>=</c-> <c- n>std</c-><c- o>::</c-><c- n>unique_ptr</c-><c- o>&lt;</c-><c- n>impl</c-><c- o>></c-><c- p>(</c-><c- o>*</c-><c- n>pimpl</c-><c- p>);</c->
+    <c- p>}</c->
+<c- p>}</c->
+
+<c- n>widget</c-><c- o>&amp;</c-> <c- k>operator</c-><c- o>=</c-><c- p>(</c-><c- k>const</c-> <c- n>widget</c-><c- o>&amp;</c-> <c- n>rhs</c-><c- p>)</c-> <c- p>{</c->
+
+    <c- k>if</c-> <c- p>(</c-><c- k>this</c-> <c- o>!=</c-> <c- o>&amp;</c-><c- n>rhs</c-> <c- p>)</c-> <c- p>{</c-> 
+        <c- n>pimpl</c-> <c- o>=</c-> <c- n>std</c-><c- o>::</c-><c- n>unique_ptr</c-><c- o>&lt;</c-><c- n>impl</c-><c- o>></c-><c- p>(</c-><c- o>*</c-><c- n>pimpl</c-><c- p>);</c->
+    <c- p>}</c->
+    <c- k>return</c-> <c- o>*</c-><c- k>this</c-><c- p>;</c->
+<c- p>}</c->
+</pre>
+   However, this is boiler plate code that must be repeated per Pimpl implementation.  Worse still we are not able to benefit from the rule-of-zero to have the compiler generate this method for use. 
+   <p>Using the proposed indirect_value Pimpl classes could be implemented to take advantage of the rule-of-zero to provide compiler generated method implementations.  Note this is implementations only, function declarations are required in the header and in the source file with the <code class="highlight"><c- k>default</c-></code> keyword in-order to instruct the compiler to generate the function bodies in the source translation unit where the definition of the implementation class is visible to the compiler.</p>
+<pre class="highlight"><c- c1>// Header file</c->
+<c- k>class</c-> <c- nc>widget</c-> <c- p>{</c->
+<c- k>public</c-><c- o>:</c->
+    <c- n>widget</c-><c- p>();</c->
+    <c- n>widget</c-><c- p>(</c-><c- n>widget</c-><c- o>&amp;&amp;</c-> <c- n>rhs</c-><c- p>)</c-> <c- k>noexcept</c-><c- p>;</c->
+    <c- n>widget</c-><c- p>(</c-><c- k>const</c-> <c- n>widget</c-><c- o>&amp;</c-> <c- n>rhs</c-><c- p>);</c->
+    <c- n>widget</c-><c- o>&amp;</c-> <c- k>operator</c-><c- o>=</c-><c- p>(</c-><c- n>widget</c-><c- o>&amp;&amp;</c-> <c- n>rhs</c-><c- p>)</c-> <c- k>noexcept</c-><c- p>;</c->
+    <c- n>widget</c-><c- o>&amp;</c-> <c- k>operator</c-><c- o>=</c-><c- p>(</c-><c- k>const</c-> <c- n>widget</c-><c- o>&amp;</c-> <c- n>rhs</c-><c- p>);</c->
+    <c- o>~</c-><c- n>widget</c-><c- p>();</c->
+<c- k>private</c-><c- o>:</c->
+    <c- k>class</c-> <c- nc>impl</c-><c- p>;</c->
+    <c- n>unique_ptr</c-><c- o>&lt;</c-><c- n>impl</c-><c- o>></c-> <c- n>pimpl</c-><c- p>;</c->
+<c- p>};</c->
+ 
+<c- c1>// Implementation file</c->
+<c- k>class</c-> <c- nc>widget</c-><c- o>::</c-><c- n>impl</c-> <c- p>{</c->
+    <c- c1>// :::</c->
+<c- p>};</c->
+
+<c- c1>// Force instantiation of the rule of zero methods in the translation unit where implementation details are known.</c->
+<c- n>widget</c-><c- o>::</c-><c- n>widget</c-><c- p>(</c-><c- n>widget</c-><c- o>&amp;&amp;</c-> <c- n>rhs</c-><c- p>)</c-> <c- k>noexcept</c-> <c- o>=</c-> <c- k>default</c-><c- p>;</c->
+<c- n>widget</c-><c- o>::</c-><c- n>widget</c-><c- p>(</c-><c- k>const</c-> <c- n>widget</c-><c- o>&amp;</c-> <c- n>rhs</c-><c- p>)</c-> <c- o>=</c-> <c- k>default</c-><c- p>;</c->
+<c- n>widget</c-><c- o>&amp;</c-> <c- n>widget</c-><c- o>::</c-><c- k>operator</c-><c- o>=</c-><c- p>(</c-><c- n>widget</c-><c- o>&amp;&amp;</c-> <c- n>rhs</c-><c- p>)</c-> <c- k>noexcept</c-> <c- o>=</c-> <c- k>default</c-><c- p>;</c->
+<c- n>widget</c-><c- o>&amp;</c-> <c- n>widget</c-><c- o>::</c-><c- k>operator</c-><c- o>=</c-><c- p>(</c-><c- k>const</c-> <c- n>widget</c-><c- o>&amp;</c-> <c- n>rhs</c-><c- p>)</c-> <c- o>=</c-> <c- k>default</c-><c- p>;</c->
+<c- n>widget</c-><c- o>::~</c-><c- n>widget</c-><c- p>()</c-> <c- o>=</c-> <c- k>default</c-><c- p>;</c->
+</pre>
+   <p>Now the external class has compiler generated copy and move constructors, copy and move assignment operators and destructor.  All of these compiler-generated functions will behave correctly.</p>
+   <h3 class="heading settled" data-level="2.3" id="deep-copying"><span class="secno">2.3. </span><span class="content">Deep Copying</span><a class="self-link" href="#deep-copying"></a></h3>
+   <h3 class="heading settled" data-level="2.4" id="why-polymorphic_value-does-not-solve-this-problem-ie-not-paying-for-what-you-dont-use"><span class="secno">2.4. </span><span class="content">Why polymorphic_value does not solve this problem, i.e. not paying for what you don’t use.</span><a class="self-link" href="#why-polymorphic_value-does-not-solve-this-problem-ie-not-paying-for-what-you-dont-use"></a></h3>
+   <h3 class="heading settled" data-level="2.5" id="prior-art"><span class="secno">2.5. </span><span class="content">Prior Art</span><a class="self-link" href="#prior-art"></a></h3>
+   <h3 class="heading settled" data-level="2.6" id="completeness-of-t"><span class="secno">2.6. </span><span class="content">Completeness of T*</span><a class="self-link" href="#completeness-of-t"></a></h3>
+    Recommended practice for pointer-to-implementation of Pimpl classes since C++11 has been to store the pointer-to-implementation in a std::unique_ptr [S. Meyers]. Smart pointer types in the Standard Library expect that some of the members can be instantiated with incomplete types [H.Hinnant]. Similarly, this is the case for indirect_value, the table outlines the expected behaviour for incomplete pointer types: 
    <table>
     <thead>
      <tr>
@@ -1635,7 +1720,7 @@ The Pimpl idiom has become a well-known engineering paradigm in the C++ world
       <td>Swap
       <td>Incomplete
    </table>
-   <h3 class="heading settled" data-level="2.6" id="impact-on-the-standard"><span class="secno">2.6. </span><span class="content">Impact on the standard</span><a class="self-link" href="#impact-on-the-standard"></a></h3>
+   <h3 class="heading settled" data-level="2.7" id="impact-on-the-standard"><span class="secno">2.7. </span><span class="content">Impact on the standard</span><a class="self-link" href="#impact-on-the-standard"></a></h3>
     This proposal is a pure library extension. It requires additions to be made to the standard library header \
    <memoryU0005C>
     . 
@@ -1815,9 +1900,11 @@ The template parameter <code class="highlight"><c- n>T</c-></code> of <code clas
     <more come to>
       for useful discussion. 
      <h2 class="heading settled" data-level="5" id="references"><span class="secno">5. </span><span class="content">References</span><a class="self-link" href="#references"></a></h2>
+      [J. Coplien] Advanced C++ Programming Styles and Idioms (Addison-Wesley), James O. Coplien, 1992 
      <p>[A. Upadyshev] <a href="http://oliora.github.io/2015/12/29/pimpl-and-rule-of-zero.html">PIMPL, Rule of Zero and Scott Meyers, Andrey Upadyshev, 2015</a></p>
      <p>[H. Hinnant] <a href="http://howardhinnant.github.io/incomplete.html">“Incomplete types and shared_ptr / unique_ptr”, Howard Hinnant, 2011</a></p>
-     <p>[H. Sutter] <a href="https://herbsutter.com/gotw/_100/">"GotW #100: Compilation Firewalls", Herb Sutter, 2011</a></p>
+     <p>[H. Sutter 98] <a href="http://www.gotw.ca/publications/mill04.htm">"Pimpls - Beauty Marks You Can Depend On", Herb Sutter, 1998</a></p>
+     <p>[H. Sutter 11] <a href="https://herbsutter.com/gotw/_100/">"GotW #100: Compilation Firewalls", Herb Sutter, 2011</a></p>
      <p>[Impl] <a href="https://github.com/jbcoe/indirect_value">Reference implementation: indirect_value, J.B.Coe</a></p>
      <p>[S. Meyers] Effective Modern C++, Item 22: When using the Pimpl Idiom, define special member functions in the implementation file, Scott Meyers, 2014</p>
      <p>[W. Brown] <a href="open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3339.pdf">A Preliminary Proposal for a Deep-Copying Smart Pointer, Walter E. Brown, 2012</a></p>
