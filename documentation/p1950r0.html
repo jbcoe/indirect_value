@@ -2,7 +2,7 @@
  <head>
   <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
   <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
-  <title>P1950R0: &lt;code>indirect_value&lt;/code>: A Free-Store Allocated Value Type For C++</title>
+  <title>P1950R0: &lt;code>indirect_value&lt;/code>: A Free Store Allocated Value Type For C++</title>
 <style data-fill-with="stylesheet">/******************************************************************************
  *                   Style sheet for the W3C specifications                   *
  *
@@ -1505,7 +1505,7 @@ pre .property::before, pre .property::after {
  <body class="h-entry">
   <div class="head">
    <p data-fill-with="logo"></p>
-   <h1 class="p-name no-ref" id="title">P1950R0<br><code class="highlight"><c- n>indirect_value</c-></code>: A Free-Store Allocated Value Type For C++</h1>
+   <h1 class="p-name no-ref" id="title">P1950R0<br><code class="highlight"><c- n>indirect_value</c-></code>: A Free Store Allocated Value Type For C++</h1>
    <h2 class="no-num no-toc no-ref heading settled" id="subtitle"><span class="content">Published Proposal, <time class="dt-updated" datetime="2020-01-11">2020-01-11</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
@@ -1564,9 +1564,9 @@ pre .property::before, pre .property::after {
   </nav>
   <main>
    <h2 class="heading settled" data-level="1" id="abstract"><span class="secno">1. </span><span class="content">Abstract</span><a class="self-link" href="#abstract"></a></h2>
-    Add a class template, indirect_value, to the C++ Standard Library to support free-store allocated objects with value-like semantics. 
+    Add a class template, indirect_value, to the C++ Standard Library to support free store allocated objects with value-like semantics. 
    <h2 class="heading settled" data-level="2" id="introduction"><span class="secno">2. </span><span class="content">Introduction</span><a class="self-link" href="#introduction"></a></h2>
-    The class template, indirect_value, confers value-like semantics on a free-store allocated object. An indirect_value may hold an object of a class T, copying the indirect_value will copy the object of T, and constness will propagate from the owning classes to the indirect_value type. 
+    The class template, indirect_value, confers value-like semantics on a free store allocated object. An indirect_value may hold an object of a class T, copying the indirect_value will copy the object of T, and constness will propagate from the owning classes to the indirect_value type. 
    <h3 class="heading settled" data-level="2.1" id="motivation"><span class="secno">2.1. </span><span class="content">Motivation</span><a class="self-link" href="#motivation"></a></h3>
    <p>The C++ standard includes support for numerous smart pointer templates, with support for new addition ongoing [Meneide et al].  One common use for these types is as the pointer-to-implementation in the Pimpl idiom [H.Sutter 11]. If the application design requires deep-copy semantic when the type is moved, existing pointer types, <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>unique_ptr</c-></code> and <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>shared_ptr</c-></code> are not the correct tools for the job.</p>
    <p>One option for value semantics is the use of <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>experimental</c-><c- o>::</c-><c- n>polymophic_value</c-></code>. However, <code class="highlight"><c- n>polymophic_value</c-></code> provides a solution to the <em>polymorphic copying problem</em>, which requires the use of type-erasure.  Such implementation details incur a cost. However, use of the Pimpl idiom will likely not involve polymorphic types.  As such using <code class="highlight"><c- n>polymophic_value</c-></code> means paying for features that are not used.</p>
