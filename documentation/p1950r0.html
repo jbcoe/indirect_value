@@ -2,7 +2,7 @@
  <head>
   <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
   <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
-  <title>P1950R0: &lt;code>indirect_value&lt;/code>: An indirect value-type for C++</title>
+  <title>P1950R0: &lt;code>indirect_value&lt;/code>: A Free-Store Allocated Value Type For C++</title>
 <style data-fill-with="stylesheet">/******************************************************************************
  *                   Style sheet for the W3C specifications                   *
  *
@@ -1505,8 +1505,8 @@ pre .property::before, pre .property::after {
  <body class="h-entry">
   <div class="head">
    <p data-fill-with="logo"></p>
-   <h1 class="p-name no-ref" id="title">P1950R0<br><code class="highlight"><c- n>indirect_value</c-></code>: An indirect value-type for C++</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="subtitle"><span class="content">Published Proposal, <time class="dt-updated" datetime="2020-01-10">2020-01-10</time></span></h2>
+   <h1 class="p-name no-ref" id="title">P1950R0<br><code class="highlight"><c- n>indirect_value</c-></code>: A Free-Store Allocated Value Type For C++</h1>
+   <h2 class="no-num no-toc no-ref heading settled" id="subtitle"><span class="content">Published Proposal, <time class="dt-updated" datetime="2020-01-11">2020-01-11</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -1564,9 +1564,9 @@ pre .property::before, pre .property::after {
   </nav>
   <main>
    <h2 class="heading settled" data-level="1" id="abstract"><span class="secno">1. </span><span class="content">Abstract</span><a class="self-link" href="#abstract"></a></h2>
-    Add a class template, indirect_value, to the standard library to support indirect objects with value-like semantics. 
+    Add a class template, indirect_value, to the C++ Standard Library to support free-store allocated objects with value-like semantics. 
    <h2 class="heading settled" data-level="2" id="introduction"><span class="secno">2. </span><span class="content">Introduction</span><a class="self-link" href="#introduction"></a></h2>
-    The class template, indirect_value, confers value-like semantics on a freestore allocated object. An indirect_value may hold an object of a class T, copying the indirect_value will copy the object of T, and constness will propagate from the owning classes to the indirect_value type. 
+    The class template, indirect_value, confers value-like semantics on a free-store allocated object. An indirect_value may hold an object of a class T, copying the indirect_value will copy the object of T, and constness will propagate from the owning classes to the indirect_value type. 
    <h3 class="heading settled" data-level="2.1" id="motivation"><span class="secno">2.1. </span><span class="content">Motivation</span><a class="self-link" href="#motivation"></a></h3>
    <p>The C++ standard includes support for numerous smart pointer templates, with support for new addition ongoing [Meneide et al].  One common use for these types is as the pointer-to-implementation in the Pimpl idiom [H.Sutter 11]. If the application design requires deep-copy semantic when the type is moved, existing pointer types, <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>unique_ptr</c-></code> and <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>shared_ptr</c-></code> are not the correct tools for the job.</p>
    <p>One option for value semantics is the use of <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>experimental</c-><c- o>::</c-><c- n>polymophic_value</c-></code>. However, <code class="highlight"><c- n>polymophic_value</c-></code> provides a solution to the <em>polymorphic copying problem</em>, which requires the use of type-erasure.  Such implementation details incur a cost. However, use of the Pimpl idiom will likely not involve polymorphic types.  As such using <code class="highlight"><c- n>polymophic_value</c-></code> means paying for features that are not used.</p>
@@ -1625,7 +1625,7 @@ pre .property::before, pre .property::after {
     <c- k>return</c-> <c- o>*</c-><c- k>this</c-><c- p>;</c->
 <c- p>}</c->
 </pre>
-   However, this is boilerplate code that must be repeated per Pimpl implementation.  Worse still we are not able to benefit from the rule-of-zero to have the compiler generate the methods for use. 
+   However, this is boilerplate code that must be repeated per Pimpl implementation.  Worse still we are not able to benefit from the rule-of-zero [CppCoreGuidelines] to have the compiler generate the methods for use. 
    <p>Using the proposed indirect_value Pimpl classes could be implemented to take advantage of the rule-of-zero to provide compiler-generated method implementations.  Note this is implementations only, function declarations are required in the header and in the source file with the <code class="highlight"><c- k>default</c-></code> keyword in-order to instruct the compiler to generate the function bodies in the source translation unit where the definition of the implementation class is visible to the compiler, as discussed in [S. Meyers].</p>
 <pre class="highlight"><c- c1>// Header file</c->
 <c- k>class</c-> <c- nc>widget</c-> <c- p>{</c->
@@ -1887,7 +1887,7 @@ The template parameter <code class="highlight"><c- n>T</c-></code> of <code clas
      <p>Remarks: The method shall work with incomplete pointer type for T.</p>
    </ul>
    <h2 class="heading settled" data-level="4" id="acknowledgements"><span class="secno">4. </span><span class="content">Acknowledgements</span><a class="self-link" href="#acknowledgements"></a></h2>
-    The authors would like to thank Thomas Russell, and Andrew Bennieston for useful discussions on the topic and the BSI panel for on-going inspiration. 
+    The authors would like to thank Thomas Russell, and Andrew Bennieston for useful discussions on the topic and the BSI panel for on-going support. 
    <h2 class="heading settled" data-level="5" id="references"><span class="secno">5. </span><span class="content">References</span><a class="self-link" href="#references"></a></h2>
    <p>[J. Coe] <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0201r3.pdf">p0201r3: A polymorphic value-type for C++</a></p>
    <p>[J. Coplien] Advanced C++ Programming Styles and Idioms (Addison-Wesley), James O. Coplien, 1992</p>
@@ -1896,6 +1896,7 @@ The template parameter <code class="highlight"><c- n>T</c-></code> of <code clas
    <p>[H. Sutter 98] <a href="http://www.gotw.ca/publications/mill04.htm">"Pimpls - Beauty Marks You Can Depend On", Herb Sutter, 1998</a></p>
    <p>[H. Sutter 11] <a href="https://herbsutter.com/gotw/_100/">"GotW #100: Compilation Firewalls", Herb Sutter, 2011</a></p>
    <p>[Impl] <a href="https://github.com/jbcoe/indirect_value">Reference implementation: indirect_value, J.B.Coe</a></p>
+   <p>[CppCoreGuidelines] <a href="https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Rc-zero">If you can avoid defining default operations, do</a></p>
    <p>[S. Meyers] Effective Modern C++, Item 22: When using the Pimpl Idiom, define special member functions in the implementation file, Scott Meyers, 2014</p>
    <p>[W. Brown] <a href="open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3339.pdf">n3339: A Preliminary Proposal for a Deep-Copying Smart Pointer, Walter E. Brown, 2012</a></p>
    <p>[Meneide et al] <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1132r6.html">p1132r6: out_ptr - a scalable output pointer abstraction, JeanHeyd Meneide, Todor Buyukliev, Isabella Muerte, 2019</a></p>
