@@ -4,7 +4,7 @@ if (CURL)
         COMMAND
             pwd
         COMMAND
-            ${CURL} -k https://api.csswg.org/bikeshed/ -F file=@${CMAKE_CURRENT_SOURCE_DIR}/p1950.md -F force=1 > ${CMAKE_CURRENT_SOURCE_DIR}/p1950r0.html
+            ${CURL} -k https://api.csswg.org/bikeshed/ -F file=@${CMAKE_CURRENT_SOURCE_DIR}/p1950.md -F force=1 > p1950r0.html
         BYPRODUCTS
             p1950r0.html
         COMMENT
