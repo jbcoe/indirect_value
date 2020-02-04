@@ -18,6 +18,7 @@ protected:
   template<class U = C, class = std::enable_if_t<std::is_default_constructible_v<U>>>
   indirect_value_base() noexcept(noexcept(C())) {}
   indirect_value_base(C c) : c_(std::move(c)) {}
+  C& get() noexcept { return c_; }
   const C& get() const noexcept { return c_; }
   C c_;
 };
@@ -28,6 +29,7 @@ protected:
   template<class U=C, class = std::enable_if_t<std::is_default_constructible_v<U>>>
   indirect_value_base() noexcept(noexcept(C())) {}
   indirect_value_base(C c) : C(std::move(c)) {}
+  C& get() noexcept { return *this; }
   const C& get() const noexcept { return *this; }
 };
 
@@ -90,11 +92,12 @@ class indirect_value : private indirect_value_base<T, C> {
 
   friend void swap(indirect_value& lhs, indirect_value& rhs) {
     using std::swap;
+    swap(lhs.get_c(), rhs.get_c());
     swap(lhs.ptr_, rhs.ptr_);
-    swap(lhs.c_, rhs.c_);
   }
 
   private:
+    C& get_c() noexcept { return base::get(); }
     const C& get_c() const noexcept { return base::get(); }
 };
 
