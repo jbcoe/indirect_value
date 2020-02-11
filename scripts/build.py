@@ -41,6 +41,12 @@ def main():
         help='Run tests with address and undefined behaviour sanitizer if available',
         default=False,
         dest='sanitizers')
+    parser.add_argument(
+        '--paper',
+        help='Build the ISO paper',
+        default=False,
+        action='store_true',
+        dest='paper')
 
     if platform.system() == "Windows":
         parser.add_argument(
@@ -79,6 +85,10 @@ def main():
     subprocess.check_call(
         'cmake --build ./{}'.format(args.out_dir).split(), cwd=src_dir)
 
+    if args.paper:
+        subprocess.check_call(
+            'cmake --build ./{} -t iso_paper'.format(args.out_dir).split(), cwd=src_dir)
+        
     if args.run_tests:
         rc = subprocess.call(
             'ctest . --output-on-failure -C {}'.format(args.config).split(),
