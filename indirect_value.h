@@ -18,6 +18,7 @@ protected:
   template<class U = C, class = std::enable_if_t<std::is_default_constructible_v<U>>>
   indirect_value_base() noexcept(noexcept(C())) {}
   indirect_value_base(C c) : c_(std::move(c)) {}
+  C& get() noexcept { return c_; }
   const C& get() const noexcept { return c_; }
   C c_;
 };
@@ -28,6 +29,7 @@ protected:
   template<class U=C, class = std::enable_if_t<std::is_default_constructible_v<U>>>
   indirect_value_base() noexcept(noexcept(C())) {}
   indirect_value_base(C c) : C(std::move(c)) {}
+  C& get() noexcept { return *this; }
   const C& get() const noexcept { return *this; }
 };
 
@@ -42,20 +44,20 @@ class indirect_value : private indirect_value_base<T, C> {
   indirect_value() = default;
 
   template <class... Ts>
-  indirect_value(std::in_place_t, Ts&&... ts) {
+  explicit indirect_value(std::in_place_t, Ts&&... ts) {
     ptr_ = std::unique_ptr<T, D>(new T(std::forward<Ts>(ts)...), D{});
   }
 
-  indirect_value(T* t, C c = C{}, D d = D{}) : base(std::move(c)), ptr_(std::unique_ptr<T, D>(t, std::move(d))) {
+  explicit indirect_value(T* t, C c = C{}, D d = D{}) noexcept : base(std::move(c)), ptr_(std::unique_ptr<T, D>(t, std::move(d))) {
   }
 
-  indirect_value(const indirect_value& i) : base(get_c()) {
+  explicit indirect_value(const indirect_value& i) : base(get_c()) {
     if (i.ptr_) { 
       ptr_ = std::unique_ptr<T, D>(get_c()(*i.ptr_), D{});
     }
   }
 
-  indirect_value(indirect_value&& i) noexcept : base(std::move(i)), ptr_(std::exchange(i.ptr_, nullptr)) {}
+  explicit indirect_value(indirect_value&& i) noexcept : base(std::move(i)), ptr_(std::exchange(i.ptr_, nullptr)) {}
 
   indirect_value& operator = (const indirect_value& i) {
     base::operator=(i);
@@ -78,9 +80,9 @@ class indirect_value : private indirect_value_base<T, C> {
 
   ~indirect_value() = default;
 
-  T* operator->() { return ptr_.operator->(); }
+  T* operator->() noexcept { return ptr_.operator->(); }
 
-  const T* operator->() const { return ptr_.operator->(); }
+  const T* operator->() const noexcept { return ptr_.operator->(); }
 
   T& operator*() { return *ptr_; }
 
@@ -90,11 +92,12 @@ class indirect_value : private indirect_value_base<T, C> {
 
   friend void swap(indirect_value& lhs, indirect_value& rhs) {
     using std::swap;
+    swap(lhs.get_c(), rhs.get_c());
     swap(lhs.ptr_, rhs.ptr_);
-    swap(lhs.c_, rhs.c_);
   }
 
   private:
+    C& get_c() noexcept { return base::get(); }
     const C& get_c() const noexcept { return base::get(); }
 };
 

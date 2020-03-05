@@ -300,3 +300,54 @@ TEST_CASE("Operator bool for indirect_value", "[operator.bool]")
         }
     }
 }
+
+TEST_CASE("Swap overload for indirect_value", "[swap.primitive]")
+{
+    GIVEN("A two value-initialised indirect_value values utilising the empty base-class optimisation")
+    {
+        constexpr int a_value = 5;
+        constexpr int b_value = 10;
+        indirect_value<int> a{ new int(a_value) };
+        indirect_value<int> b{ new int(b_value) };
+
+        WHEN("The contents are swap")
+        {
+            swap(a, b);
+
+            THEN("The contents of the indirect_value should be moved")
+            {
+                REQUIRE(*a == b_value);
+                REQUIRE(*b == a_value);
+            }
+        }
+    }
+    GIVEN("A two value-initialised indirect_value values not using the empty base-class optimisation")
+    {
+        auto default_copy_lambda_a = [](int original) { return new int(original); };
+        auto default_copy_lambda_b = [](int original) { return new int(original); };
+
+        constexpr int a_value = 5;
+        constexpr int b_value = 10;
+        indirect_value<int, decltype(+default_copy_lambda_a)> a{ new int(a_value), default_copy_lambda_a };
+        indirect_value<int, decltype(+default_copy_lambda_b)> b{ new int(b_value), default_copy_lambda_b };
+
+        THEN("Confirm sized base class is used and its size requirements meet our expectations")
+        {
+            REQUIRE(static_test<sizeof(decltype(a)) != sizeof(indirect_value<int>)>());
+            REQUIRE(static_test<sizeof(decltype(b)) != sizeof(indirect_value<int>)>());
+            REQUIRE(static_test<sizeof(decltype(a)) == (sizeof(indirect_value<int>)+sizeof(decltype(+default_copy_lambda_a)))>());
+            REQUIRE(static_test<sizeof(decltype(b)) == (sizeof(indirect_value<int>)+sizeof(decltype(+default_copy_lambda_b)))>());
+        }
+
+        WHEN("The contents are swap")
+        {
+            swap(a, b);
+
+            THEN("The contents of the indirect_value should be moved")
+            {
+                REQUIRE(*a == b_value);
+                REQUIRE(*b == a_value);
+            }
+        }
+    }
+}
