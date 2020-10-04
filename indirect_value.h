@@ -48,7 +48,8 @@ class indirect_value : private indirect_value_base<T, C> {
     ptr_ = std::unique_ptr<T, D>(new T(std::forward<Ts>(ts)...), D{});
   }
 
-  explicit indirect_value(T* t, C c = C{}, D d = D{}) noexcept : base(std::move(c)), ptr_(std::unique_ptr<T, D>(t, std::move(d))) {
+  template <class U, class = std::enable_if_t<std::is_same_v<T, U>>>
+  explicit indirect_value(U* u, C c = C{}, D d = D{}) noexcept : base(std::move(c)), ptr_(std::unique_ptr<T, D>(u, std::move(d))) {
   }
 
   explicit indirect_value(const indirect_value& i) : base(get_c()) {
@@ -101,6 +102,10 @@ class indirect_value : private indirect_value_base<T, C> {
     const C& get_c() const noexcept { return base::get(); }
 };
 
+template<class T>
+indirect_value(T*) -> indirect_value<T>;
+
 }  // namespace isocpp_p1950
+
 
 #endif  // ISOCPP_P1950_INDIRECT_VALUE_H
