@@ -5,6 +5,12 @@
 #include <type_traits>
 #include <utility>
 
+#ifdef __cpp_concepts
+#define ISOCPP_P1950_REQUIRES(x) requires x
+#else
+#define ISOCPP_P1950_REQUIRES(x)
+#endif
+
 namespace isocpp_p1950 {
 
 template <class T>
@@ -54,7 +60,9 @@ class indirect_value : private indirect_value_base<T, C> {
   explicit indirect_value(U* u, C c = C{}, D d = D{}) noexcept
       : base(std::move(c)), ptr_(std::unique_ptr<T, D>(u, std::move(d))) {}
 
-  explicit indirect_value(const indirect_value& i) : base(get_c()) {
+  explicit indirect_value(const indirect_value& i)
+      ISOCPP_P1950_REQUIRES(std::is_copy_constructible_v<T>)
+      : base(get_c()) {
     if (i.ptr_) {
       ptr_ = std::unique_ptr<T, D>(get_c()(*i.ptr_), D{});
     }
@@ -63,7 +71,8 @@ class indirect_value : private indirect_value_base<T, C> {
   explicit indirect_value(indirect_value&& i) noexcept
       : base(std::move(i)), ptr_(std::exchange(i.ptr_, nullptr)) {}
 
-  indirect_value& operator=(const indirect_value& i) {
+  indirect_value& operator=(const indirect_value& i)
+      ISOCPP_P1950_REQUIRES(std::is_copy_assignable_v<T>) {
     base::operator=(i);
     if (i.ptr_) {
       if (!ptr_) {
