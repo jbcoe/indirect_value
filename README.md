@@ -149,7 +149,7 @@ Once this is set you can add the indirect_value dependency to you project via th
 ```bash
 indirect_value/0.0.1@public-conan/testing
 ```
-Available versions of the Polymorphic Value  package can be search via Conan:
+Available versions of the Indirect Value  package can be search via Conan:
 ```bash
 conan search indirect_value
 ```
