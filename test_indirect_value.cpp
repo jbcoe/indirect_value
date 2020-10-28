@@ -66,7 +66,7 @@ TEST_CASE("Default construction for indirect_value", "[constructor.default]") {
     }
   }
   GIVEN("An indirect_value value")  //"The ability to track internal copies and
-                                    //deletes of the default constructor")
+                                    // deletes of the default constructor")
   {
     WHEN(
         "Default constructed then copy assigned from a pointer-initialised")  //("Create a default-constructed indirect_value which is later copy-constructed")
