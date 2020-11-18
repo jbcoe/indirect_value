@@ -44,10 +44,12 @@ target_compile_features(indirect_value
 add_library(indirect_value::indirect_value ALIAS indirect_value)
 
 if (${CPP_INDIRECT_IS_SUBPROJECT})
+
     if (${BUILD_TESTING})
         FetchContent_Declare(
             catch2
             GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+            GIT_TAG v2.x
         )
 
         FetchContent_GetProperties(catch2)
