@@ -62,7 +62,7 @@ interface_type::~interface_type() = default;
 ~~~
 
 # ISO Standardisation
-[`indirect_value` has been proposed for standardisation for C++23 in P1950R0](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p1950r0.html)
+[`indirect_value` has been proposed for standardisation for C++23 in P1950R1](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p1950r1.html)
 
 # Contents
 - [Integration](#integration)
