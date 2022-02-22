@@ -75,11 +75,9 @@ class indirect_value : private indirect_value_base<T, C> {
       ISOCPP_P1950_REQUIRES(std::is_copy_assignable_v<T>) {
     base::operator=(i);
     if (i.ptr_) {
-      if (!ptr_) {
-        ptr_ = std::unique_ptr<T, D>(get_c()(*i.ptr_), D{});
-      } else {
-        ptr_.reset(get_c()(*i.ptr_));
-      }
+      ptr_ = std::unique_ptr<T, D>(get_c()(*i.ptr_), i.ptr_.get_deleter());
+    } else {
+      ptr_.reset();
     }
     return *this;
   }
