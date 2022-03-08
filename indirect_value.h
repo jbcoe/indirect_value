@@ -107,6 +107,13 @@ class indirect_value : private indirect_value_base<T, C> {
     swap(ptr_, rhs.ptr_);
   }
 
+  template<class TC = C>
+  friend std::enable_if_t<std::is_swappable_v<TC> && std::is_swappable_v<D>>
+  swap(indirect_value& lhs,
+       indirect_value& rhs) noexcept(noexcept(lhs.swap(rhs))) {
+    lhs.swap(rhs);
+  }
+
  private:
   C& get_c() noexcept { return base::get(); }
   const C& get_c() const noexcept { return base::get(); }
@@ -114,13 +121,6 @@ class indirect_value : private indirect_value_base<T, C> {
 
 template <class T>
 indirect_value(T*) -> indirect_value<T>;
-
-template <class T, class C, class D>
-std::enable_if_t<std::is_swappable_v<C> && std::is_swappable_v<C>> swap(
-    indirect_value<T, C, D>& lhs,
-    indirect_value<T, C, D>& rhs) noexcept(noexcept(lhs.swap(rhs))) {
-  lhs.swap(rhs);
-}
 
 }  // namespace isocpp_p1950
 
