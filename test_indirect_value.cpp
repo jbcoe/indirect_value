@@ -345,3 +345,309 @@ TEST_CASE("Swap overload for indirect_value", "[swap.primitive]") {
     }
   }
 }
+
+TEST_CASE("Relational operators between two indirect_values", "[TODO]") {
+  GIVEN("Two empty indirect_value values") {
+    const indirect_value<int> a;
+    const indirect_value<int> b;
+
+    THEN("The values should be equal") {
+      REQUIRE(a == b);
+      REQUIRE(!(a != b));
+      REQUIRE(!(a < b));
+      REQUIRE(!(a > b));
+      REQUIRE(a <= b);
+      REQUIRE(a >= b);
+    }
+  }
+
+  GIVEN("One non-empty and one empty indirect_value") {
+    const indirect_value<int> nonEmpty(std::in_place, 0);
+    const indirect_value<int> empty;
+
+    THEN("The values should be unequal") {
+      REQUIRE(!(nonEmpty == empty));
+      REQUIRE(nonEmpty != empty);
+      REQUIRE(!(nonEmpty < empty));
+      REQUIRE(nonEmpty > empty);
+      REQUIRE(!(nonEmpty <= empty));
+      REQUIRE(nonEmpty >= empty);
+    }
+  }
+
+  GIVEN("Two non-empty indirect_value values with equal values") {
+    const indirect_value<int> a(std::in_place, 0);
+    const indirect_value<int> b(std::in_place, 0);
+    THEN("The values should be equal") {
+      REQUIRE(a == b);
+      REQUIRE(!(a != b));
+      REQUIRE(!(a < b));
+      REQUIRE(!(a > b));
+      REQUIRE(a <= b);
+      REQUIRE(a >= b);
+    }
+  }
+
+  GIVEN("Two non-empty indirect_value values with different values") {
+    const indirect_value<int> a(std::in_place, 0);
+    const indirect_value<int> b(std::in_place, 1);
+    THEN("a should be less than b") {
+      REQUIRE(!(a == b));
+      REQUIRE(a != b);
+      REQUIRE(a < b);
+      REQUIRE(!(a > b));
+      REQUIRE(a <= b);
+      REQUIRE(!(a >= b));
+    }
+  }
+}
+
+TEST_CASE("Relational operators between two indirect_values of different type",
+          "[TODO]") {
+  GIVEN("Two empty indirect_value values") {
+    const indirect_value<int> a;
+    const indirect_value<short> b;
+
+    THEN("The values should be equal") {
+      REQUIRE(a == b);
+      REQUIRE(!(a != b));
+      REQUIRE(!(a < b));
+      REQUIRE(!(a > b));
+      REQUIRE(a <= b);
+      REQUIRE(a >= b);
+    }
+  }
+
+  GIVEN("One non-empty and one empty indirect_value") {
+    const indirect_value<int> nonEmpty(std::in_place, 0);
+    const indirect_value<short> empty;
+
+    THEN("The values should be unequal") {
+      REQUIRE(!(nonEmpty == empty));
+      REQUIRE(nonEmpty != empty);
+      REQUIRE(!(nonEmpty < empty));
+      REQUIRE(nonEmpty > empty);
+      REQUIRE(!(nonEmpty <= empty));
+      REQUIRE(nonEmpty >= empty);
+    }
+  }
+
+  GIVEN("Two non-empty indirect_value values with equal values") {
+    const indirect_value<int> a(std::in_place, 0);
+    const indirect_value<short> b(std::in_place, short{0});
+    THEN("The values should be equal") {
+      REQUIRE(a == b);
+      REQUIRE(!(a != b));
+      REQUIRE(!(a < b));
+      REQUIRE(!(a > b));
+      REQUIRE(a <= b);
+      REQUIRE(a >= b);
+    }
+  }
+
+  GIVEN("Two non-empty indirect_value values with different values") {
+    const indirect_value<int> a(std::in_place, 0);
+    const indirect_value<short> b(std::in_place, short{1});
+    THEN("a should be less than b") {
+      REQUIRE(!(a == b));
+      REQUIRE(a != b);
+      REQUIRE(a < b);
+      REQUIRE(!(a > b));
+      REQUIRE(a <= b);
+      REQUIRE(!(a >= b));
+    }
+  }
+}
+
+TEST_CASE("Relational operators between an indirect_value and nullptr",
+          "[TODO]") {
+  GIVEN("An empty indirect_value") {
+    const indirect_value<int> empty;
+
+    THEN("The value should be equal to nullptr") {
+      REQUIRE(empty == nullptr);
+      REQUIRE(nullptr == empty);
+      REQUIRE(!(empty != nullptr));
+      REQUIRE(!(nullptr != empty));
+      REQUIRE(!(empty < nullptr));
+      REQUIRE(!(nullptr < empty));
+      REQUIRE(!(empty > nullptr));
+      REQUIRE(!(nullptr > empty));
+      REQUIRE(empty <= nullptr);
+      REQUIRE(nullptr <= empty);
+      REQUIRE(empty >= nullptr);
+      REQUIRE(nullptr >= empty);
+    }
+  }
+
+  GIVEN("A non-empty indirect_value") {
+    const indirect_value<int> nonEmpty(std::in_place);
+
+    THEN("The value should be unequal to nullptr") {
+      REQUIRE(!(nonEmpty == nullptr));
+      REQUIRE(!(nullptr == nonEmpty));
+      REQUIRE(nonEmpty != nullptr);
+      REQUIRE(nullptr != nonEmpty);
+      REQUIRE(!(nonEmpty < nullptr));
+      REQUIRE(nullptr < nonEmpty);
+      REQUIRE(nonEmpty > nullptr);
+      REQUIRE(!(nullptr > nonEmpty));
+      REQUIRE(!(nonEmpty <= nullptr));
+      REQUIRE(nullptr <= nonEmpty);
+      REQUIRE(nonEmpty >= nullptr);
+      REQUIRE(!(nullptr >= nonEmpty));
+    }
+  }
+}
+
+TEST_CASE("Relational operators between indirect_value and value_type",
+          "[TODO]") {
+  GIVEN("An empty indirect_value and a value_type") {
+    const indirect_value<int> empty;
+    const int value{};
+
+    THEN("The value should be greater") {
+      REQUIRE(!(empty == value));
+      REQUIRE(!(value == empty));
+      REQUIRE(empty != value);
+      REQUIRE(value != empty);
+      REQUIRE(empty < value);
+      REQUIRE(!(value < empty));
+      REQUIRE(!(empty > value));
+      REQUIRE(value > empty);
+      REQUIRE(empty <= value);
+      REQUIRE(!(value <= empty));
+      REQUIRE(!(empty >= value));
+      REQUIRE(value >= empty);
+    }
+  }
+
+  GIVEN("A non-empty indirect_value and a value_type with equal value") {
+    const indirect_value<int> nonEmpty(std::in_place, 0);
+    const int value{};
+
+    THEN("The value should be equal") {
+      REQUIRE(nonEmpty == value);
+      REQUIRE(value == nonEmpty);
+      REQUIRE(!(nonEmpty != value));
+      REQUIRE(!(value != nonEmpty));
+      REQUIRE(!(nonEmpty < value));
+      REQUIRE(!(value < nonEmpty));
+      REQUIRE(!(nonEmpty > value));
+      REQUIRE(!(value > nonEmpty));
+      REQUIRE(nonEmpty <= value);
+      REQUIRE(value <= nonEmpty);
+      REQUIRE(nonEmpty >= value);
+      REQUIRE(value >= nonEmpty);
+    }
+  }
+
+  GIVEN("A non-empty indirect_value and a value_type with smaller value") {
+    const indirect_value<int> nonEmpty(std::in_place, 0);
+    const int value{-1};
+
+    THEN("The value should be smaller") {
+      REQUIRE(!(nonEmpty == value));
+      REQUIRE(!(value == nonEmpty));
+      REQUIRE(nonEmpty != value);
+      REQUIRE(value != nonEmpty);
+      REQUIRE(!(nonEmpty < value));
+      REQUIRE(value < nonEmpty);
+      REQUIRE(nonEmpty > value);
+      REQUIRE(!(value > nonEmpty));
+      REQUIRE(!(nonEmpty <= value));
+      REQUIRE(value <= nonEmpty);
+      REQUIRE(nonEmpty >= value);
+      REQUIRE(!(value >= nonEmpty));
+    }
+  }
+}
+
+TEST_CASE(
+    "Relational operators between indirect_value and value_type of different "
+    "type",
+    "[TODO]") {
+  GIVEN("An empty indirect_value and a value_type") {
+    const indirect_value<int> empty;
+    const short value{};
+
+    THEN("The value should be greater") {
+      REQUIRE(!(empty == value));
+      REQUIRE(!(value == empty));
+      REQUIRE(empty != value);
+      REQUIRE(value != empty);
+      REQUIRE(empty < value);
+      REQUIRE(!(value < empty));
+      REQUIRE(!(empty > value));
+      REQUIRE(value > empty);
+      REQUIRE(empty <= value);
+      REQUIRE(!(value <= empty));
+      REQUIRE(!(empty >= value));
+      REQUIRE(value >= empty);
+    }
+  }
+
+  GIVEN("A non-empty indirect_value and a value_type with equal value") {
+    const indirect_value<int> nonEmpty(std::in_place, 0);
+    const short value{};
+
+    THEN("The value should be equal") {
+      REQUIRE(nonEmpty == value);
+      REQUIRE(value == nonEmpty);
+      REQUIRE(!(nonEmpty != value));
+      REQUIRE(!(value != nonEmpty));
+      REQUIRE(!(nonEmpty < value));
+      REQUIRE(!(value < nonEmpty));
+      REQUIRE(!(nonEmpty > value));
+      REQUIRE(!(value > nonEmpty));
+      REQUIRE(nonEmpty <= value);
+      REQUIRE(value <= nonEmpty);
+      REQUIRE(nonEmpty >= value);
+      REQUIRE(value >= nonEmpty);
+    }
+  }
+
+  GIVEN("A non-empty indirect_value and a value_type with smaller value") {
+    const indirect_value<int> nonEmpty(std::in_place, 0);
+    const short value{-1};
+
+    THEN("The value should be smaller") {
+      REQUIRE(!(nonEmpty == value));
+      REQUIRE(!(value == nonEmpty));
+      REQUIRE(nonEmpty != value);
+      REQUIRE(value != nonEmpty);
+      REQUIRE(!(nonEmpty < value));
+      REQUIRE(value < nonEmpty);
+      REQUIRE(nonEmpty > value);
+      REQUIRE(!(value > nonEmpty));
+      REQUIRE(!(nonEmpty <= value));
+      REQUIRE(value <= nonEmpty);
+      REQUIRE(nonEmpty >= value);
+      REQUIRE(!(value >= nonEmpty));
+    }
+  }
+}
+
+#ifdef __cpp_concepts
+
+template <class T, class U, class Comp>
+concept Compare = requires(const T& a, const U& b) {
+  { Comp{}(a, b) };
+  { Comp{}(b, a) };
+};
+
+TEST_CASE(
+    "Relational operators between indirect_value and value_type of "
+    "non-equality-comparable type",
+    "[TODO]") {
+  struct NonComparable {};
+  using IV = indirect_value<NonComparable>;
+  static_assert(!Compare<IV, NonComparable, std::equal_to<>>);
+  static_assert(!Compare<IV, NonComparable, std::not_equal_to<>>);
+  static_assert(!Compare<IV, NonComparable, std::less<>>);
+  static_assert(!Compare<IV, NonComparable, std::greater<>>);
+  static_assert(!Compare<IV, NonComparable, std::less_equal<>>);
+  static_assert(!Compare<IV, NonComparable, std::greater_equal<>>);
+}
+
+#endif

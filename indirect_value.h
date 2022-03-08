@@ -5,6 +5,10 @@
 #include <type_traits>
 #include <utility>
 
+#if defined(__cpp_lib_three_way_comparison) && defined(__cpp_lib_concepts)
+#include <compare>
+#endif
+
 #ifdef __cpp_concepts
 #define ISOCPP_P1950_REQUIRES(x) requires x
 #else
@@ -121,6 +125,250 @@ class indirect_value : private indirect_value_base<T, C> {
 
 template <class T>
 indirect_value(T*) -> indirect_value<T>;
+
+// Relational operators between two indirect_values.
+template <class T1, class C1, class D1, class T2, class C2, class D2>
+bool operator==(const indirect_value<T1, C1, D1>& lhs,
+                const indirect_value<T2, C2, D2>& rhs) {
+  const bool leftHasValue = bool(lhs);
+  return leftHasValue == bool(rhs) && (!leftHasValue || *lhs == *rhs);
+}
+
+template <class T1, class C1, class D1, class T2, class C2, class D2>
+bool operator!=(const indirect_value<T1, C1, D1>& lhs,
+                const indirect_value<T2, C2, D2>& rhs) {
+  const bool leftHasValue = bool(lhs);
+  return leftHasValue != bool(rhs) || (leftHasValue && *lhs != *rhs);
+}
+
+template <class T1, class C1, class D1, class T2, class C2, class D2>
+bool operator<(const indirect_value<T1, C1, D1>& lhs,
+               const indirect_value<T2, C2, D2>& rhs) {
+  return bool(rhs) && (!bool(lhs) || *lhs < *rhs);
+}
+
+template <class T1, class C1, class D1, class T2, class C2, class D2>
+bool operator>(const indirect_value<T1, C1, D1>& lhs,
+               const indirect_value<T2, C2, D2>& rhs) {
+  return bool(lhs) && (!bool(rhs) || *lhs > *rhs);
+}
+
+template <class T1, class C1, class D1, class T2, class C2, class D2>
+bool operator<=(const indirect_value<T1, C1, D1>& lhs,
+                const indirect_value<T2, C2, D2>& rhs) {
+  return !bool(lhs) || (bool(rhs) && *lhs <= *rhs);
+}
+
+template <class T1, class C1, class D1, class T2, class C2, class D2>
+bool operator>=(const indirect_value<T1, C1, D1>& lhs,
+                const indirect_value<T2, C2, D2>& rhs) {
+  return !bool(rhs) || (bool(lhs) && *lhs >= *rhs);
+}
+
+#if defined(__cpp_lib_three_way_comparison) && defined(__cpp_lib_concepts)
+template <class T1, class C1, class D1, std::three_way_comparable_with<T1> T2,
+          class C2, class D2>
+std::compare_three_way_result_t<T1, T2> operator<=>(
+    const indirect_value<T1, C1, D1>& lhs,
+    const indirect_value<T2, C2, D2>& rhs) {
+  if (lhs && rhs) {
+    return *lhs <=> *rhs;
+  }
+  return bool(lhs) <=> bool(rhs);
+}
+#endif
+
+// Comparisons with nullptr_t.
+template <class T, class C, class D>
+bool operator==(const indirect_value<T, C, D>& lhs, std::nullptr_t) noexcept {
+  return !lhs;
+}
+
+#if defined(__cpp_lib_three_way_comparison) && defined(__cpp_lib_concepts)
+template <class T, class C, class D>
+std::strong_ordering operator<=>(const indirect_value<T, C, D>& lhs,
+                                 std::nullptr_t) {
+  return bool(lhs) <=> false;
+}
+#else
+template <class T, class C, class D>
+bool operator==(std::nullptr_t, const indirect_value<T, C, D>& rhs) noexcept {
+  return !rhs;
+}
+
+template <class T, class C, class D>
+bool operator!=(const indirect_value<T, C, D>& lhs, std::nullptr_t) noexcept {
+  return bool(lhs);
+}
+
+template <class T, class C, class D>
+bool operator!=(std::nullptr_t, const indirect_value<T, C, D>& rhs) noexcept {
+  return bool(rhs);
+}
+
+template <class T, class C, class D>
+bool operator<(const indirect_value<T, C, D>&, std::nullptr_t) noexcept {
+  return false;
+}
+
+template <class T, class C, class D>
+bool operator<(std::nullptr_t, const indirect_value<T, C, D>& rhs) noexcept {
+  return bool(rhs);
+}
+
+template <class T, class C, class D>
+bool operator>(const indirect_value<T, C, D>& lhs, std::nullptr_t) noexcept {
+  return bool(lhs);
+}
+
+template <class T, class C, class D>
+bool operator>(std::nullptr_t, const indirect_value<T, C, D>&) noexcept {
+  return false;
+}
+
+template <class T, class C, class D>
+bool operator<=(const indirect_value<T, C, D>& lhs, std::nullptr_t) noexcept {
+  return !lhs;
+}
+
+template <class T, class C, class D>
+bool operator<=(std::nullptr_t, const indirect_value<T, C, D>&) noexcept {
+  return true;
+}
+
+template <class T, class C, class D>
+bool operator>=(const indirect_value<T, C, D>&, std::nullptr_t) noexcept {
+  return true;
+}
+
+template <class T, class C, class D>
+bool operator>=(std::nullptr_t, const indirect_value<T, C, D>& rhs) noexcept {
+  return !rhs;
+}
+#endif
+
+// Comparisons with T
+template <class T>
+using _enable_if_convertible_to_bool =
+    std::enable_if_t<std::is_convertible_v<T, bool>, bool>;
+
+template <class LHS, class RHS>
+using _enable_if_comparable_with_equal =
+    _enable_if_convertible_to_bool<decltype(std::declval<const LHS&>() ==
+                                            std::declval<const RHS&>())>;
+
+template <class LHS, class RHS>
+using _enable_if_comparable_with_not_equal =
+    _enable_if_convertible_to_bool<decltype(std::declval<const LHS&>() !=
+                                            std::declval<const RHS&>())>;
+
+template <class LHS, class RHS>
+using _enable_if_comparable_with_less =
+    _enable_if_convertible_to_bool<decltype(std::declval<const LHS&>() <
+                                            std::declval<const RHS&>())>;
+
+template <class LHS, class RHS>
+using _enable_if_comparable_with_greater =
+    _enable_if_convertible_to_bool<decltype(std::declval<const LHS&>() >
+                                            std::declval<const RHS&>())>;
+
+template <class LHS, class RHS>
+using _enable_if_comparable_with_less_equal =
+    _enable_if_convertible_to_bool<decltype(std::declval<const LHS&>() <=
+                                            std::declval<const RHS&>())>;
+
+template <class LHS, class RHS>
+using _enable_if_comparable_with_greater_equal =
+    _enable_if_convertible_to_bool<decltype(std::declval<const LHS&>() >=
+                                            std::declval<const RHS&>())>;
+
+template <class T, class C, class D, class U>
+auto operator==(const indirect_value<T, C, D>& lhs, const U& rhs)
+    -> _enable_if_comparable_with_equal<T, U> {
+  return lhs && *lhs == rhs;
+}
+
+template <class T, class C, class D, class U>
+auto operator==(const T& lhs, const indirect_value<U, C, D>& rhs)
+    -> _enable_if_comparable_with_equal<T, U> {
+  return rhs && lhs == *rhs;
+}
+
+template <class T, class C, class D, class U>
+auto operator!=(const indirect_value<T, C, D>& lhs, const U& rhs)
+    -> _enable_if_comparable_with_not_equal<T, U> {
+  return !lhs || *lhs != rhs;
+}
+
+template <class T, class C, class D, class U>
+auto operator!=(const T& lhs, const indirect_value<U, C, D>& rhs)
+    -> _enable_if_comparable_with_not_equal<T, U> {
+  return !rhs || lhs != *rhs;
+}
+
+template <class T, class C, class D, class U>
+auto operator<(const indirect_value<T, C, D>& lhs, const U& rhs)
+    -> _enable_if_comparable_with_less<T, U> {
+  return !lhs || *lhs < rhs;
+}
+
+template <class T, class C, class D, class U>
+auto operator<(const T& lhs, const indirect_value<U, C, D>& rhs)
+    -> _enable_if_comparable_with_less<T, U> {
+  return rhs && lhs < *rhs;
+}
+
+template <class T, class C, class D, class U>
+auto operator>(const indirect_value<T, C, D>& lhs, const U& rhs)
+    -> _enable_if_comparable_with_greater<T, U> {
+  return lhs && *lhs > rhs;
+}
+
+template <class T, class C, class D, class U>
+auto operator>(const T& lhs, const indirect_value<U, C, D>& rhs)
+    -> _enable_if_comparable_with_greater<T, U> {
+  return !rhs || lhs > *rhs;
+}
+
+template <class T, class C, class D, class U>
+auto operator<=(const indirect_value<T, C, D>& lhs, const U& rhs)
+    -> _enable_if_comparable_with_less_equal<T, U> {
+  return !lhs || *lhs <= rhs;
+}
+
+template <class T, class C, class D, class U>
+auto operator<=(const T& lhs, const indirect_value<U, C, D>& rhs)
+    -> _enable_if_comparable_with_less_equal<T, U> {
+  return rhs && lhs <= *rhs;
+}
+
+template <class T, class C, class D, class U>
+auto operator>=(const indirect_value<T, C, D>& lhs, const U& rhs)
+    -> _enable_if_comparable_with_greater_equal<T, U> {
+  return lhs && *lhs >= rhs;
+}
+
+template <class T, class C, class D, class U>
+auto operator>=(const T& lhs, const indirect_value<U, C, D>& rhs)
+    -> _enable_if_comparable_with_greater_equal<T, U> {
+  return !rhs || lhs >= *rhs;
+}
+
+#if defined(__cpp_lib_three_way_comparison) && defined(__cpp_lib_concepts)
+
+template <class>
+inline constexpr bool _is_indirect_value_v = false;
+
+template <class T, class C, class D>
+inline constexpr bool _is_indirect_value_v<indirect_value<T, C, D>> = true;
+
+template <class T, class C, class D, class U>
+requires (!_is_indirect_value_v<U>) &&
+    std::three_way_comparable_with<T, U> std::compare_three_way_result_t<T, U>
+    operator<=>(const indirect_value<T, C, D>& lhs, const U& rhs) {
+  return bool(lhs) ? *lhs <=> rhs : std::strong_ordering::less;
+}
+#endif
 
 }  // namespace isocpp_p1950
 
