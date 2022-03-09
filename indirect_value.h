@@ -1,6 +1,7 @@
 #ifndef ISOCPP_P1950_INDIRECT_VALUE_H
 #define ISOCPP_P1950_INDIRECT_VALUE_H
 
+#include <exception>
 #include <memory>
 #include <type_traits>
 #include <utility>
@@ -20,6 +21,13 @@ namespace isocpp_p1950 {
 template <class T>
 struct default_copy {
   T* operator()(const T& t) const { return new T(t); }
+};
+
+class bad_indirect_value_access : public std::exception {
+ public:
+  const char* what() const noexcept override {
+    return "bad_indirect_value_access";
+  }
 };
 
 template <class T, class C = default_copy<T>,
@@ -53,6 +61,10 @@ class indirect_value : private indirect_value_base<T, C> {
   std::unique_ptr<T, D> ptr_;
 
  public:
+  using value_type = T;
+  using copier_type = C;
+  using deleter_type = D;
+
   indirect_value() = default;
 
   template <class... Ts>
@@ -98,11 +110,47 @@ class indirect_value : private indirect_value_base<T, C> {
 
   const T* operator->() const noexcept { return ptr_.operator->(); }
 
-  T& operator*() { return *ptr_; }
+  T& operator*() & noexcept { return *ptr_; }
 
-  const T& operator*() const { return *ptr_; }
+  const T& operator*() const& noexcept { return *ptr_; }
+
+  T&& operator*() && noexcept { return std::move(*ptr_); }
+
+  const T&& operator*() const&& noexcept { return std::move(*ptr_); }
+
+  T& value() & {
+    if (!ptr_) throw bad_indirect_value_access();
+    return *ptr_;
+  }
+
+  const T& value() const& {
+    if (!ptr_) throw bad_indirect_value_access();
+    return *ptr_;
+  }
+
+  T&& value() && {
+    if (!ptr_) throw bad_indirect_value_access();
+    return std::move(*ptr_);
+  }
+
+  const T&& value() const&& {
+    if (!ptr_) throw bad_indirect_value_access();
+    return std::move(*ptr_);
+  }
 
   explicit constexpr operator bool() const noexcept { return ptr_ != nullptr; }
+
+  bool has_value() const noexcept { return ptr_ != nullptr; }
+
+  copier_type& get_copier() noexcept { return get_c(); }
+
+  const copier_type& get_copier() const noexcept { return get_c(); }
+
+  deleter_type& get_deleter() noexcept { return ptr_.get_deleter(); }
+
+  const deleter_type& get_deleter() const noexcept {
+    return ptr_.get_deleter();
+  }
 
   void swap(indirect_value& rhs) noexcept(
       std::is_nothrow_swappable_v<C>&& std::is_nothrow_swappable_v<D>) {
@@ -111,7 +159,7 @@ class indirect_value : private indirect_value_base<T, C> {
     swap(ptr_, rhs.ptr_);
   }
 
-  template<class TC = C>
+  template <class TC = C>
   friend std::enable_if_t<std::is_swappable_v<TC> && std::is_swappable_v<D>>
   swap(indirect_value& lhs,
        indirect_value& rhs) noexcept(noexcept(lhs.swap(rhs))) {
@@ -363,7 +411,7 @@ template <class T, class C, class D>
 inline constexpr bool _is_indirect_value_v<indirect_value<T, C, D>> = true;
 
 template <class T, class C, class D, class U>
-requires (!_is_indirect_value_v<U>) &&
+requires(!_is_indirect_value_v<U>) &&
     std::three_way_comparable_with<T, U> std::compare_three_way_result_t<T, U>
     operator<=>(const indirect_value<T, C, D>& lhs, const U& rhs) {
   return bool(lhs) ? *lhs <=> rhs : std::strong_ordering::less;
