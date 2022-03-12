@@ -130,6 +130,8 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
         catch_discover_tests(test_indirect_value)
 
         if (ENABLE_CODE_COVERAGE)
+            target_compile_options(test_indirect_value 
+                PRIVATE "-g -O0 --coverage -fprofile-arcs -ftest-coverage")
             FetchContent_Declare(
                 codecoverage
                 GIT_REPOSITORY https://github.com/RWTH-HPC/CMake-codecov.git
