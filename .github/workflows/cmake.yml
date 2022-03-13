@@ -83,13 +83,10 @@ jobs:
           sudo apt install gcc-11-multilib g++-11-multilib
       - name: Install Clang
         if: matrix.settings.compiler.type == 'CLANG'
-        shell: bash
-        working-directory: ${{ env.HOME }}
-        run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh ${{ matrix.settings.compiler.version }}
-          sudo apt install -y libc++-${{ matrix.settings.compiler.version }}-dev libc++abi-${{ matrix.settings.compiler.version }}-dev libunwind-dev
+        uses: egor-tensin/setup-clang@v1
+        with:
+          version: ${{ matrix.settings.compiler.version }}
+          platform: x64
       - name: Select Xcode 13.0
         if: matrix.config.compiler.type == 'APPLE_CLANG' && matrix.config.compiler.version == '13.0'
         shell: bash
