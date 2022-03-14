@@ -64,7 +64,7 @@ class indirect_value : private indirect_value_base<T, C> {
   explicit indirect_value(U* u, C c = C{}, D d = D{}) noexcept
       : base(std::move(c)), ptr_(std::unique_ptr<T, D>(u, std::move(d))) {}
 
-  explicit indirect_value(const indirect_value& i)
+  indirect_value(const indirect_value& i)
       ISOCPP_P1950_REQUIRES(std::is_copy_constructible_v<T>)
       : base(i.get_c()) {
     if (i.ptr_) {
@@ -72,7 +72,7 @@ class indirect_value : private indirect_value_base<T, C> {
     }
   }
 
-  explicit indirect_value(indirect_value&& i) noexcept
+  indirect_value(indirect_value&& i) noexcept
       : base(std::move(i)), ptr_(std::exchange(i.ptr_, nullptr)) {}
 
   indirect_value& operator=(const indirect_value& i)
