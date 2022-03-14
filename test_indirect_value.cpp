@@ -454,6 +454,40 @@ TEST_CASE("Calling value on empty indirect_value will throw", "[TODO]") {
   }
 }
 
+TEST_CASE("Calling value on an enganged indirect_value will not throw", "[TODO]") {
+  GIVEN("An enganged indirect_value") {
+    indirect_value<int> iv(std::in_place, 44);
+    THEN("Calling value will not throw") {
+      REQUIRE(iv.has_value());
+      REQUIRE(iv.value() == 44);
+    }
+  }
+
+  GIVEN("An enganged const indirect_value") {
+    const indirect_value<int> iv(std::in_place, 44);
+    THEN("Calling value will not throw") {
+      REQUIRE(iv.has_value());
+      REQUIRE(iv.value() == 44);
+    }
+  }
+
+  GIVEN("An enganged indirect_value rvalue") {
+    indirect_value<int> iv(std::in_place, 44);
+    THEN("Calling value will not throw") {
+      REQUIRE(iv.has_value());
+      REQUIRE(std::move(iv).value() == 44);
+    }
+  }
+
+  GIVEN("An enganged const indirect_value rvalue") {
+    const indirect_value<int> iv(std::in_place, 44);
+    THEN("Calling value will throw") {
+      REQUIRE(iv.has_value());
+      REQUIRE(std::move(iv).value() == 44);
+    }
+  }
+}
+
 TEST_CASE("get_copier returns modifiable lvalue reference", "[TODO]") {
   GIVEN("An lvalue of indirect_value with a modifiable copier") {
     struct Copier {
