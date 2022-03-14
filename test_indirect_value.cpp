@@ -1,8 +1,11 @@
+#include <string_view>
+
 #include "indirect_value.h"
 
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
 
+using isocpp_p1950::bad_indirect_value_access;
 using isocpp_p1950::indirect_value;
 
 /*! Helper function to capture constexpr results in catch test reporting.
@@ -346,6 +349,183 @@ TEST_CASE("Swap overload for indirect_value", "[swap.primitive]") {
   }
 }
 
+TEMPLATE_TEST_CASE("Noexcept of observers", "[TODO]", indirect_value<int>&,
+                   const indirect_value<int>&, indirect_value<int>&&,
+                   const indirect_value<int>&&) {
+  using T = TestType;
+  static_assert(noexcept(std::declval<T>().operator->()));
+  static_assert(noexcept(std::declval<T>().operator*()));
+  static_assert(!noexcept(std::declval<T>().value()));
+  static_assert(noexcept(std::declval<T>().operator bool()));
+  static_assert(noexcept(std::declval<T>().has_value()));
+  static_assert(noexcept(std::declval<T>().get_copier()));
+  static_assert(noexcept(std::declval<T>().get_deleter()));
+}
+
+template <class T, class U>
+inline constexpr bool same_const_qualifiers =
+    std::is_const_v<std::remove_reference_t<T>> ==
+    std::is_const_v<std::remove_reference_t<U>>;
+
+template <class T, class U>
+inline constexpr bool same_ref_qualifiers = false;
+
+template <class T, class U>
+inline constexpr bool same_ref_qualifiers<T&, U&> = true;
+
+template <class T, class U>
+inline constexpr bool same_ref_qualifiers<T&&, U&&> = true;
+
+template <class T, class U>
+inline constexpr bool same_const_and_ref_qualifiers =
+    same_ref_qualifiers<T, U>&& same_const_qualifiers<T, U>;
+
+TEMPLATE_TEST_CASE("Ref- and const-qualifier of observers", "[TODO]",
+                   indirect_value<int>&, const indirect_value<int>&,
+                   indirect_value<int>&&, const indirect_value<int>&&) {
+  using T = TestType;
+
+  static_assert(
+      same_const_and_ref_qualifiers<T,
+                                    decltype(std::declval<T>().operator*())>);
+  static_assert(
+      same_const_and_ref_qualifiers<T, decltype(std::declval<T>().value())>);
+  static_assert(
+      std::is_same_v<bool, decltype(std::declval<T>().operator bool())>);
+  static_assert(std::is_same_v<bool, decltype(std::declval<T>().has_value())>);
+  static_assert(
+      same_const_qualifiers<T, decltype(std::declval<T>().get_copier())>);
+  static_assert(
+      same_const_qualifiers<T, decltype(std::declval<T>().get_deleter())>);
+}
+
+TEST_CASE("Test properties of bad_indirect_value_access", "[TODO]") {
+  bad_indirect_value_access ex;
+  // check that we can throw a bad_indirect_value_access and catch
+  // it as const std::exception&.
+  try {
+    throw ex;
+  } catch (const std::exception& e) {
+    // Use std::string_view to get the correct behavior of operator==.
+    std::string_view what = e.what();
+    REQUIRE(what == ex.what());
+    REQUIRE(what.size() > 0);
+  }
+
+  static_assert(std::is_base_of_v<std::exception, bad_indirect_value_access>);
+  static_assert(
+      std::is_nothrow_default_constructible_v<bad_indirect_value_access>);
+  static_assert(
+      std::is_nothrow_copy_constructible_v<bad_indirect_value_access>);
+  static_assert(noexcept(ex.what()));
+}
+
+TEST_CASE("Calling value on empty indirect_value will throw", "[TODO]") {
+  GIVEN("An empty indirect_value") {
+    indirect_value<int> iv;
+    THEN("Calling value will throw") {
+      REQUIRE(!iv.has_value());
+      REQUIRE_THROWS_AS(iv.value(), bad_indirect_value_access);
+    }
+  }
+
+  GIVEN("An empty const indirect_value") {
+    const indirect_value<int> iv;
+    THEN("Calling value will throw") {
+      REQUIRE(!iv.has_value());
+      REQUIRE_THROWS_AS(iv.value(), bad_indirect_value_access);
+    }
+  }
+
+  GIVEN("An empty indirect_value rvalue") {
+    indirect_value<int> iv;
+    THEN("Calling value will throw") {
+      REQUIRE(!iv.has_value());
+      REQUIRE_THROWS_AS(std::move(iv).value(), bad_indirect_value_access);
+    }
+  }
+
+  GIVEN("An empty const indirect_value rvalue") {
+    const indirect_value<int> iv;
+    THEN("Calling value will throw") {
+      REQUIRE(!iv.has_value());
+      REQUIRE_THROWS_AS(std::move(iv).value(), bad_indirect_value_access);
+    }
+  }
+}
+
+TEST_CASE("Calling value on an enganged indirect_value will not throw", "[TODO]") {
+  GIVEN("An enganged indirect_value") {
+    indirect_value<int> iv(std::in_place, 44);
+    THEN("Calling value will not throw") {
+      REQUIRE(iv.has_value());
+      REQUIRE(iv.value() == 44);
+    }
+  }
+
+  GIVEN("An enganged const indirect_value") {
+    const indirect_value<int> iv(std::in_place, 44);
+    THEN("Calling value will not throw") {
+      REQUIRE(iv.has_value());
+      REQUIRE(iv.value() == 44);
+    }
+  }
+
+  GIVEN("An enganged indirect_value rvalue") {
+    indirect_value<int> iv(std::in_place, 44);
+    THEN("Calling value will not throw") {
+      REQUIRE(iv.has_value());
+      REQUIRE(std::move(iv).value() == 44);
+    }
+  }
+
+  GIVEN("An enganged const indirect_value rvalue") {
+    const indirect_value<int> iv(std::in_place, 44);
+    THEN("Calling value will throw") {
+      REQUIRE(iv.has_value());
+      REQUIRE(std::move(iv).value() == 44);
+    }
+  }
+}
+
+TEST_CASE("get_copier returns modifiable lvalue reference", "[TODO]") {
+  GIVEN("An lvalue of indirect_value with a modifiable copier") {
+    struct Copier {
+      std::string name;
+      int* operator()(int x) const {
+        REQUIRE(name == "Modified");
+        return new int(x);
+      }
+    };
+
+    indirect_value<int, Copier> iv(std::in_place, 10);
+    THEN("Modifying the copier will be observable") {
+      iv.get_copier().name = "Modified";
+      REQUIRE(iv.get_copier().name == "Modified");
+      iv = iv; //Force invocation of copier
+    }
+  }
+}
+
+TEST_CASE("get_deleter returns modifiable lvalue reference", "[TODO]") {
+  GIVEN("An lvalue of indirect_value with a modifiable deleter") {
+    struct Deleter {
+      std::string name;
+      void operator()(int* p) const {
+        REQUIRE(name == "Modified");
+        delete p;
+      }
+    };
+
+    indirect_value<int, isocpp_p1950::default_copy<int>, Deleter> iv(
+        std::in_place, 10);
+    THEN("Modifying the deleter will be observable") {
+      iv.get_deleter().name = "Modified";
+      REQUIRE(iv.get_deleter().name == "Modified");
+    }
+  }
+}
+
 TEST_CASE("Relational operators between two indirect_values", "[TODO]") {
   GIVEN("Two empty indirect_value values") {
     const indirect_value<int> a;
@@ -632,8 +812,8 @@ TEST_CASE(
 
 template <class T, class U, class Comp>
 concept Compare = requires(const T& a, const U& b) {
-  { Comp{}(a, b) };
-  { Comp{}(b, a) };
+  {Comp{}(a, b)};
+  {Comp{}(b, a)};
 };
 
 TEST_CASE(
