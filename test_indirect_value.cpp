@@ -454,7 +454,8 @@ TEST_CASE("Calling value on empty indirect_value will throw", "[TODO]") {
   }
 }
 
-TEST_CASE("Calling value on an enganged indirect_value will not throw", "[TODO]") {
+TEST_CASE("Calling value on an enganged indirect_value will not throw",
+          "[TODO]") {
   GIVEN("An enganged indirect_value") {
     indirect_value<int> iv(std::in_place, 44);
     THEN("Calling value will not throw") {
@@ -502,7 +503,7 @@ TEST_CASE("get_copier returns modifiable lvalue reference", "[TODO]") {
     THEN("Modifying the copier will be observable") {
       iv.get_copier().name = "Modified";
       REQUIRE(iv.get_copier().name == "Modified");
-      iv = iv; //Force invocation of copier
+      iv = iv;  // Force invocation of copier
     }
   }
 }
@@ -831,3 +832,60 @@ TEST_CASE(
 }
 
 #endif
+
+template <class T, class = void>
+struct IsHashable : std::false_type {};
+
+template <class T>
+struct IsHashable<
+    T, std::void_t<decltype(std::hash<T>{}(std::declval<const T&>()))>>
+    : std::true_type {
+  static constexpr bool IsNoexcept =
+      noexcept(std::hash<T>{}(std::declval<const T&>()));
+};
+
+struct ProvidesNoHash {};
+
+struct ProvidesThrowingHash {};
+
+namespace std {
+template <>
+struct hash<ProvidesThrowingHash> {
+  size_t operator()(const ProvidesThrowingHash&) const { return 0; }
+};
+}  // namespace std
+
+TEST_CASE("Hash for indirect_value", "[TODO]") {
+  GIVEN("An empty indirect_value") {
+    const indirect_value<int> empty;
+
+    THEN("The hash should be zero") {
+      REQUIRE(std::hash<indirect_value<int>>{}(empty) == 0);
+      static_assert(IsHashable<indirect_value<int>>::IsNoexcept);
+    }
+  }
+
+  GIVEN("A non-empty indirect_value") {
+    const indirect_value<int> nonEmpty(std::in_place, 55);
+
+    THEN("The hash values should be equal") {
+      const std::size_t intHash = std::hash<int>{}(*nonEmpty);
+      const std::size_t indirectValueHash =
+          std::hash<indirect_value<int>>{}(nonEmpty);
+      REQUIRE(intHash == indirectValueHash);
+    }
+  }
+
+  GIVEN("A type which is not hashable") {
+    static_assert(!IsHashable<ProvidesNoHash>::value);
+    static_assert(!IsHashable<indirect_value<ProvidesNoHash>>::value);
+  }
+
+  GIVEN("A type which is hashable and std::hash throws") {
+    static_assert(IsHashable<ProvidesThrowingHash>::value);
+    static_assert(IsHashable<indirect_value<ProvidesThrowingHash>>::value);
+    static_assert(!IsHashable<ProvidesThrowingHash>::IsNoexcept);
+    static_assert(
+        !IsHashable<indirect_value<ProvidesThrowingHash>>::IsNoexcept);
+  }
+}

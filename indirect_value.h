@@ -418,6 +418,34 @@ requires(!_is_indirect_value_v<U>) &&
 }
 #endif
 
+template <class IndirectValue, bool Enabled>
+struct _conditionally_enabled_hash {
+  using VTHash = std::hash<typename IndirectValue::value_type>;
+
+  std::size_t operator()(const IndirectValue& key) const
+      noexcept(noexcept(VTHash{}(*key))) {
+    return key ? VTHash{}(*key) : 0;
+  }
+};
+
+template <class T>
+struct _conditionally_enabled_hash<T,
+                                   false> {  // conditionally disabled hash base
+  _conditionally_enabled_hash() = delete;
+  _conditionally_enabled_hash(const _conditionally_enabled_hash&) = delete;
+  _conditionally_enabled_hash& operator=(const _conditionally_enabled_hash&) =
+      delete;
+};
+
 }  // namespace isocpp_p1950
+
+namespace std {
+
+template <class T, class C, class D>
+struct hash<::isocpp_p1950::indirect_value<T, C, D>>
+    : ::isocpp_p1950::_conditionally_enabled_hash<
+          ::isocpp_p1950::indirect_value<T, C, D>,
+          is_default_constructible_v<hash<T>>> {};
+}  // namespace std
 
 #endif  // ISOCPP_P1950_INDIRECT_VALUE_H
