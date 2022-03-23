@@ -21,6 +21,14 @@ constexpr bool static_test() {
   return B;
 }
 
+// Helper function to write unit tests for self assign.
+// Compiler emit the warnings -Wself-assign-overload and -Wself-move
+// when assigning a variable to itself. This function avoids these warnings.
+template <class T, class U>
+void SelfAssign(T& t, U&& u) {
+  t = std::forward<U>(u);
+}
+
 TEST_CASE("Ensure that indirect_value uses the minimum space requirements",
           "[indirect_value.sizeof]") {
   REQUIRE(static_test<sizeof(indirect_value<int>) ==
@@ -513,7 +521,7 @@ TEST_CASE("get_copier returns modifiable lvalue reference", "[TODO]") {
     THEN("Modifying the copier will be observable") {
       iv.get_copier().name = "Modified";
       REQUIRE(iv.get_copier().name == "Modified");
-      iv = iv;  // Force invocation of copier
+      SelfAssign(iv, iv);  // Force invocation of copier
     }
   }
 }
@@ -681,7 +689,7 @@ void TestCopyAndDeleteStats() {
   stats::reset();
   {
     IV empty;
-    empty = empty;
+    SelfAssign(empty, empty);
   }
   REQUIRE(stats::default_ctor_count == 2);
   REQUIRE(stats::copy_ctor_count == 0);
@@ -695,7 +703,7 @@ void TestCopyAndDeleteStats() {
   stats::reset();
   {
     IV empty;
-    empty = std::move(empty);
+    SelfAssign(empty, std::move(empty));
   }
   REQUIRE(stats::default_ctor_count == 2);
   REQUIRE(stats::copy_ctor_count == 0);
@@ -806,7 +814,7 @@ void TestCopyAndDeleteStats() {
   stats::reset();
   {
     IV engaged(std::in_place);
-    engaged = engaged;
+    SelfAssign(engaged, engaged);
   }
   REQUIRE(stats::default_ctor_count == 2);
   REQUIRE(stats::copy_ctor_count == 0);
@@ -821,7 +829,7 @@ void TestCopyAndDeleteStats() {
   stats::reset();
   {
     IV engaged(std::in_place);
-    engaged = std::move(engaged);
+    SelfAssign(engaged, std::move(engaged));
   }
   REQUIRE(stats::default_ctor_count == 2);
   REQUIRE(stats::copy_ctor_count == 0);
@@ -914,9 +922,9 @@ TEST_CASE("Self assign an indirect_value", "[TODO]") {
   {
     stats::reset();
     indirect_value<int, stats, stats> empty;
-    empty = empty;
+    SelfAssign(empty, empty);
     REQUIRE(!empty);
-    empty = std::move(empty);
+    SelfAssign(empty, std::move(empty));
     REQUIRE(!empty);
   }
   REQUIRE(stats::copy_operator_count == 0);
@@ -925,11 +933,11 @@ TEST_CASE("Self assign an indirect_value", "[TODO]") {
   {
     stats::reset();
     indirect_value<int, stats, stats> engaged(std::in_place, 34);
-    engaged = engaged;
+    SelfAssign(engaged, engaged);
     REQUIRE(engaged);
     REQUIRE(*engaged == 34);
     int* const address = &*engaged;
-    engaged = std::move(engaged);
+    SelfAssign(engaged, std::move(engaged));
     REQUIRE(engaged);
     REQUIRE(address == &*engaged);
   }
