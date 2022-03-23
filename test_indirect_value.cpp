@@ -1,3 +1,4 @@
+#include <functional>
 #include <string_view>
 
 #include "indirect_value.h"
@@ -24,6 +25,15 @@ TEST_CASE("Ensure that indirect_value uses the minimum space requirements",
           "[indirect_value.sizeof]") {
   REQUIRE(static_test<sizeof(indirect_value<int>) ==
                       sizeof(std::unique_ptr<int>)>());
+
+  struct CopyDeleteHybrid {  // Same type for copy and delete
+    void operator()(int* p) { delete p; }
+    int* operator()(const int& s) { return new int(s); }
+  };
+
+  REQUIRE(static_test<
+          sizeof(indirect_value<int, CopyDeleteHybrid, CopyDeleteHybrid>) ==
+          sizeof(std::unique_ptr<int>)>());
 }
 
 template <typename T>
@@ -482,7 +492,7 @@ TEST_CASE("Calling value on an enganged indirect_value will not throw",
 
   GIVEN("An enganged const indirect_value rvalue") {
     const indirect_value<int> iv(std::in_place, 44);
-    THEN("Calling value will throw") {
+    THEN("Calling value will not throw") {
       REQUIRE(iv.has_value());
       REQUIRE(std::move(iv).value() == 44);
     }
@@ -524,6 +534,514 @@ TEST_CASE("get_deleter returns modifiable lvalue reference", "[TODO]") {
       iv.get_deleter().name = "Modified";
       REQUIRE(iv.get_deleter().name == "Modified");
     }
+  }
+}
+
+struct stats {
+  inline static int default_ctor_count = 0;
+  inline static int copy_ctor_count = 0;
+  inline static int move_ctor_count = 0;
+  inline static int copy_assign_count = 0;
+  inline static int move_assign_count = 0;
+  inline static int copy_operator_count = 0;
+  inline static int delete_operator_count = 0;
+
+  stats() { ++default_ctor_count; }
+  stats(const stats&) { ++copy_ctor_count; }
+  stats(stats&&) noexcept { ++move_ctor_count; }
+  stats& operator=(const stats&) {
+    ++copy_assign_count;
+    return *this;
+  }
+  stats& operator=(stats&&) noexcept {
+    ++move_assign_count;
+    return *this;
+  }
+
+  template <class T>
+  T* operator()(const T& t) const {
+    ++copy_operator_count;
+    return new T(t);
+  }
+
+  template <class T>
+  void operator()(T* p) const {
+    delete p;
+    ++delete_operator_count;
+  }
+
+  static void reset() {
+    default_ctor_count = 0;
+    copy_ctor_count = 0;
+    move_ctor_count = 0;
+    copy_assign_count = 0;
+    move_assign_count = 0;
+    copy_operator_count = 0;
+    delete_operator_count = 0;
+  }
+};
+
+struct EmptyNo_FinalNo : stats {
+  char data{};
+};
+struct EmptyNo_FinalYes final : stats {
+  char data{};
+};
+struct EmptyYes_FinalNo : stats {};
+struct EmptyYes_FinalYes final : stats {};
+
+template <class C, class D>
+void TestCopyAndDeleteStats() {
+  using IV = indirect_value<int, C, D>;
+
+  // Tests with an empty IV
+
+  stats::reset();
+  {
+    IV empty;
+    auto copyConstructFromEmpty = empty;
+  }
+  REQUIRE(stats::default_ctor_count == 2);
+  REQUIRE(stats::copy_ctor_count == 2);
+  REQUIRE(stats::move_ctor_count == 0);
+  REQUIRE(stats::copy_assign_count == 0);
+  REQUIRE(stats::move_assign_count == 0);
+  REQUIRE(stats::copy_operator_count == 0);
+  REQUIRE(stats::delete_operator_count == 0);
+
+  stats::reset();
+  {
+    IV empty;
+    auto moveConstructFromEmpty = std::move(empty);
+  }
+  REQUIRE(stats::default_ctor_count == 2);
+  REQUIRE(stats::copy_ctor_count == 0);
+  REQUIRE(stats::move_ctor_count == 2);
+  REQUIRE(stats::copy_assign_count == 0);
+  REQUIRE(stats::move_assign_count == 0);
+  REQUIRE(stats::copy_operator_count == 0);
+  REQUIRE(stats::delete_operator_count == 0);
+
+  stats::reset();
+  {
+    IV empty;
+    IV copyAssignEmptyFromEmpty;
+    copyAssignEmptyFromEmpty = empty;
+  }
+  REQUIRE(stats::default_ctor_count == 4);
+  REQUIRE(stats::copy_ctor_count == 0);
+  REQUIRE(stats::move_ctor_count == 0);
+  REQUIRE(stats::copy_assign_count == 2);
+  REQUIRE(stats::move_assign_count == 0);
+  REQUIRE(stats::copy_operator_count == 0);
+  REQUIRE(stats::delete_operator_count == 0);
+
+  stats::reset();
+  {
+    IV empty;
+    IV moveAssignEmptyFromEmpty;
+    moveAssignEmptyFromEmpty = std::move(empty);
+  }
+  REQUIRE(stats::default_ctor_count == 4);
+  REQUIRE(stats::copy_ctor_count == 0);
+  REQUIRE(stats::move_ctor_count == 0);
+  REQUIRE(stats::copy_assign_count == 0);
+  REQUIRE(stats::move_assign_count == 2);
+  REQUIRE(stats::copy_operator_count == 0);
+  REQUIRE(stats::delete_operator_count == 0);
+
+  stats::reset();
+  {
+    IV empty;
+    IV copyAssignEngagedFromEmpty(std::in_place);
+    copyAssignEngagedFromEmpty = empty;
+  }
+  REQUIRE(stats::default_ctor_count == 4);
+  REQUIRE(stats::copy_ctor_count == 0);
+  REQUIRE(stats::move_ctor_count == 0);
+  REQUIRE(stats::copy_assign_count == 2);
+  REQUIRE(stats::move_assign_count == 0);
+  REQUIRE(stats::copy_operator_count == 0);
+  REQUIRE(stats::delete_operator_count == 1);
+
+  stats::reset();
+  {
+    IV empty;
+    IV moveAssignEngagedFromEmpty(std::in_place);
+    moveAssignEngagedFromEmpty = std::move(empty);
+  }
+  REQUIRE(stats::default_ctor_count == 4);
+  REQUIRE(stats::copy_ctor_count == 0);
+  REQUIRE(stats::move_ctor_count == 0);
+  REQUIRE(stats::copy_assign_count == 0);
+  REQUIRE(stats::move_assign_count == 2);
+  REQUIRE(stats::copy_operator_count == 0);
+  REQUIRE(stats::delete_operator_count == 1);
+
+  stats::reset();
+  {
+    IV empty;
+    empty = empty;
+  }
+  REQUIRE(stats::default_ctor_count == 2);
+  REQUIRE(stats::copy_ctor_count == 0);
+  REQUIRE(stats::move_ctor_count == 0);
+  // Depending on how you implement the protection against self assign
+  REQUIRE((stats::copy_assign_count == 0 || stats::copy_assign_count == 2));
+  REQUIRE(stats::move_assign_count == 0);
+  REQUIRE(stats::copy_operator_count == 0);
+  REQUIRE(stats::delete_operator_count == 0);
+
+  stats::reset();
+  {
+    IV empty;
+    empty = std::move(empty);
+  }
+  REQUIRE(stats::default_ctor_count == 2);
+  REQUIRE(stats::copy_ctor_count == 0);
+  REQUIRE(stats::move_ctor_count == 0);
+  REQUIRE(stats::copy_assign_count == 0);
+  // Depending on how you implement the protection against self assign
+  REQUIRE((stats::move_assign_count == 0 || stats::move_assign_count == 2));
+  REQUIRE(stats::copy_operator_count == 0);
+  REQUIRE(stats::delete_operator_count == 0);
+
+  stats::reset();
+  {
+    IV empty;
+    swap(empty, empty);
+  }
+  REQUIRE(stats::default_ctor_count == 2);
+  REQUIRE(stats::copy_ctor_count == 0);
+  REQUIRE(stats::move_ctor_count == 2);
+  REQUIRE(stats::copy_assign_count == 0);
+  REQUIRE(stats::move_assign_count == 4);
+  REQUIRE(stats::copy_operator_count == 0);
+  REQUIRE(stats::delete_operator_count == 0);
+
+  // Tests with an engaged IV
+
+  stats::reset();
+  {
+    IV engaged(std::in_place);
+    auto copyConstructFromEngaged = engaged;
+  }
+  REQUIRE(stats::default_ctor_count == 2);
+  REQUIRE(stats::copy_ctor_count == 2);
+  REQUIRE(stats::move_ctor_count == 0);
+  REQUIRE(stats::copy_assign_count == 0);
+  REQUIRE(stats::move_assign_count == 0);
+  REQUIRE(stats::copy_operator_count == 1);
+  REQUIRE(stats::delete_operator_count == 2);
+
+  stats::reset();
+  {
+    IV engaged(std::in_place);
+    auto moveConstructFromEngaged = std::move(engaged);
+  }
+  REQUIRE(stats::default_ctor_count == 2);
+  REQUIRE(stats::copy_ctor_count == 0);
+  REQUIRE(stats::move_ctor_count == 2);
+  REQUIRE(stats::copy_assign_count == 0);
+  REQUIRE(stats::move_assign_count == 0);
+  REQUIRE(stats::copy_operator_count == 0);
+  REQUIRE(stats::delete_operator_count == 1);
+
+  stats::reset();
+  {
+    IV engaged(std::in_place);
+    IV copyAssignEmptyFromEngaged;
+    copyAssignEmptyFromEngaged = engaged;
+  }
+  REQUIRE(stats::default_ctor_count == 4);
+  REQUIRE(stats::copy_ctor_count == 0);
+  REQUIRE(stats::move_ctor_count == 0);
+  REQUIRE(stats::copy_assign_count == 2);
+  REQUIRE(stats::move_assign_count == 0);
+  REQUIRE(stats::copy_operator_count == 1);
+  REQUIRE(stats::delete_operator_count == 2);
+
+  stats::reset();
+  {
+    IV engaged(std::in_place);
+    IV moveAssignEmptyFromEngaged;
+    moveAssignEmptyFromEngaged = std::move(engaged);
+  }
+  REQUIRE(stats::default_ctor_count == 4);
+  REQUIRE(stats::copy_ctor_count == 0);
+  REQUIRE(stats::move_ctor_count == 0);
+  REQUIRE(stats::copy_assign_count == 0);
+  REQUIRE(stats::move_assign_count == 2);
+  REQUIRE(stats::copy_operator_count == 0);
+  REQUIRE(stats::delete_operator_count == 1);
+
+  stats::reset();
+  {
+    IV engaged(std::in_place);
+    IV copyAssignEngagedFromEngaged(std::in_place);
+    copyAssignEngagedFromEngaged = engaged;
+  }
+  REQUIRE(stats::default_ctor_count == 4);
+  REQUIRE(stats::copy_ctor_count == 0);
+  REQUIRE(stats::move_ctor_count == 0);
+  REQUIRE(stats::copy_assign_count == 2);
+  REQUIRE(stats::move_assign_count == 0);
+  REQUIRE(stats::copy_operator_count == 1);
+  REQUIRE(stats::delete_operator_count == 3);
+
+  stats::reset();
+  {
+    IV engaged(std::in_place);
+    IV moveAssignEngagedFromEngaged(std::in_place);
+    moveAssignEngagedFromEngaged = std::move(engaged);
+  }
+  REQUIRE(stats::default_ctor_count == 4);
+  REQUIRE(stats::copy_ctor_count == 0);
+  REQUIRE(stats::move_ctor_count == 0);
+  REQUIRE(stats::copy_assign_count == 0);
+  REQUIRE(stats::move_assign_count == 2);
+  REQUIRE(stats::copy_operator_count == 0);
+  REQUIRE(stats::delete_operator_count == 2);
+
+  stats::reset();
+  {
+    IV engaged(std::in_place);
+    engaged = engaged;
+  }
+  REQUIRE(stats::default_ctor_count == 2);
+  REQUIRE(stats::copy_ctor_count == 0);
+  REQUIRE(stats::move_ctor_count == 0);
+  // Depending on how you implement the protection against self assign
+  REQUIRE((stats::copy_assign_count == 0 || stats::copy_assign_count == 2));
+  REQUIRE(stats::move_assign_count == 0);
+  // Depending on how you implement the protection against self assign
+  REQUIRE((stats::copy_operator_count == 0 || stats::copy_operator_count == 1));
+  REQUIRE(stats::delete_operator_count == stats::copy_operator_count + 1);
+
+  stats::reset();
+  {
+    IV engaged(std::in_place);
+    engaged = std::move(engaged);
+  }
+  REQUIRE(stats::default_ctor_count == 2);
+  REQUIRE(stats::copy_ctor_count == 0);
+  REQUIRE(stats::move_ctor_count == 0);
+  REQUIRE(stats::copy_assign_count == 0);
+  // Depending on how you implement the protection against self assign
+  REQUIRE((stats::move_assign_count == 0 || stats::move_assign_count == 2));
+  REQUIRE(stats::copy_operator_count == 0);
+  REQUIRE(stats::delete_operator_count == 1);
+
+  stats::reset();
+  {
+    IV engaged(std::in_place);
+    swap(engaged, engaged);
+  }
+  REQUIRE(stats::default_ctor_count == 2);
+  REQUIRE(stats::copy_ctor_count == 0);
+  REQUIRE(stats::move_ctor_count == 2);
+  REQUIRE(stats::copy_assign_count == 0);
+  REQUIRE(stats::move_assign_count == 4);
+  REQUIRE(stats::copy_operator_count == 0);
+  REQUIRE(stats::delete_operator_count == 1);
+}
+
+TEST_CASE("Stats of copy and delete type", "[TODO]") {
+  TestCopyAndDeleteStats<EmptyNo_FinalNo, EmptyNo_FinalNo>();
+  TestCopyAndDeleteStats<EmptyNo_FinalNo, EmptyNo_FinalYes>();
+  TestCopyAndDeleteStats<EmptyNo_FinalNo, EmptyYes_FinalNo>();
+  TestCopyAndDeleteStats<EmptyNo_FinalNo, EmptyYes_FinalYes>();
+
+  TestCopyAndDeleteStats<EmptyNo_FinalYes, EmptyNo_FinalNo>();
+  TestCopyAndDeleteStats<EmptyNo_FinalYes, EmptyNo_FinalYes>();
+  TestCopyAndDeleteStats<EmptyNo_FinalYes, EmptyYes_FinalNo>();
+  TestCopyAndDeleteStats<EmptyNo_FinalYes, EmptyYes_FinalYes>();
+
+  TestCopyAndDeleteStats<EmptyYes_FinalNo, EmptyNo_FinalNo>();
+  TestCopyAndDeleteStats<EmptyYes_FinalNo, EmptyNo_FinalYes>();
+  TestCopyAndDeleteStats<EmptyYes_FinalNo, EmptyYes_FinalNo>();
+  TestCopyAndDeleteStats<EmptyYes_FinalNo, EmptyYes_FinalYes>();
+
+  TestCopyAndDeleteStats<EmptyYes_FinalYes, EmptyNo_FinalNo>();
+  TestCopyAndDeleteStats<EmptyYes_FinalYes, EmptyNo_FinalYes>();
+  TestCopyAndDeleteStats<EmptyYes_FinalYes, EmptyYes_FinalNo>();
+  TestCopyAndDeleteStats<EmptyYes_FinalYes, EmptyYes_FinalYes>();
+}
+
+TEST_CASE("Protection against reentrancy", "[TODO]") {
+  // There are currently three situations in which an engaged indirect_value
+  // will destory its held value:
+  // 1. Copy assignment operator
+  // 2. Move assignment operator
+  // 3. Destructor
+  // This test ensures that when these functions invoke the
+  // destructor of the held value, the indirect_value will already
+  // be set to null.
+
+  struct Reentrance {
+    indirect_value<Reentrance>* backReference{};
+    ~Reentrance() { REQUIRE(backReference->has_value() == false); }
+  };
+
+  // Test the destructor.
+  {
+    indirect_value<Reentrance> iv(std::in_place);
+    iv->backReference = &iv;
+  }
+
+  // Test the copy-assignment operator (and destructor).
+  {
+    indirect_value<Reentrance> iv(std::in_place);
+    iv->backReference = &iv;
+    indirect_value<Reentrance> copyAssigned(std::in_place);
+    copyAssigned->backReference = &copyAssigned;
+    copyAssigned = iv;
+    copyAssigned->backReference = &copyAssigned;
+  }
+
+  // Test the move-assignment operator (and destructor).
+  {
+    indirect_value<Reentrance> iv(std::in_place);
+    iv->backReference = &iv;
+    indirect_value<Reentrance> moveAssigned(std::in_place);
+    moveAssigned->backReference = &moveAssigned;
+    moveAssigned = std::move(iv);
+    moveAssigned->backReference = &moveAssigned;
+  }
+}
+
+TEST_CASE("Self assign an indirect_value", "[TODO]") {
+  {
+    stats::reset();
+    indirect_value<int, stats, stats> empty;
+    empty = empty;
+    REQUIRE(!empty);
+    empty = std::move(empty);
+    REQUIRE(!empty);
+  }
+  REQUIRE(stats::copy_operator_count == 0);
+  REQUIRE(stats::delete_operator_count == 0);
+
+  {
+    stats::reset();
+    indirect_value<int, stats, stats> engaged(std::in_place, 34);
+    engaged = engaged;
+    REQUIRE(engaged);
+    REQUIRE(*engaged == 34);
+    int* const address = &*engaged;
+    engaged = std::move(engaged);
+    REQUIRE(engaged);
+    REQUIRE(address == &*engaged);
+  }
+  REQUIRE((stats::copy_operator_count == 0 || stats::copy_operator_count == 1));
+  REQUIRE(stats::delete_operator_count == stats::copy_operator_count + 1);
+}
+
+struct CopyConstructorThrows {
+  CopyConstructorThrows() = default;
+  CopyConstructorThrows(const CopyConstructorThrows&) { throw 0; }
+  int id{};
+};
+
+struct CopyWithID : isocpp_p1950::default_copy<CopyConstructorThrows> {
+  int id{};
+};
+
+struct DeleteWithID : std::default_delete<CopyConstructorThrows> {
+  int id{};
+};
+
+TEST_CASE("Throwing copy constructor", "[TODO]") {
+  GIVEN("Two engaged indirect_value values") {
+    indirect_value<CopyConstructorThrows, CopyWithID, DeleteWithID> iv(
+        std::in_place);
+    iv->id = 1;
+    iv.get_copier().id = 10;
+    iv.get_deleter().id = 100;
+
+    indirect_value<CopyConstructorThrows, CopyWithID, DeleteWithID> other(
+        std::in_place);
+    other->id = 2;
+    other.get_copier().id = 20;
+    other.get_deleter().id = 200;
+
+    THEN("A throwing copy constructor should not change the objects") {
+      REQUIRE_THROWS_AS(iv = other, int);
+
+      REQUIRE(iv->id == 1);
+      REQUIRE(iv.get_copier().id == 10);
+      REQUIRE(iv.get_deleter().id == 100);
+      REQUIRE(other->id == 2);
+      REQUIRE(other.get_copier().id == 20);
+      REQUIRE(other.get_deleter().id == 200);
+    }
+  }
+}
+
+struct CopierWithCallback {
+  std::function<void()> callback;
+
+  CopierWithCallback() = default;
+  // Intentionally don't copy callback
+  CopierWithCallback(const CopierWithCallback&) {}
+  CopierWithCallback& operator=(const CopierWithCallback&) { return *this; }
+
+  template <class T>
+  T* operator()(const T& t) const {
+    REQUIRE(callback);
+    callback();
+    return new T(t);
+  }
+};
+
+TEST_CASE("Use source copier when copying", "[TODO]") {
+  GIVEN("An engaged indirect_value with CopierWithCallback") {
+    indirect_value<int, CopierWithCallback> engagedSource(std::in_place);
+    int copyCounter = 0;
+    engagedSource.get_copier().callback = [&copyCounter]() mutable {
+      ++copyCounter;
+    };
+    THEN("Coping will call engagedSources copier") {
+      REQUIRE(copyCounter == 0);
+      indirect_value<int, CopierWithCallback> copy(engagedSource);
+      REQUIRE(copyCounter == 1);
+      indirect_value<int, CopierWithCallback> emptyAssignee;
+      emptyAssignee = engagedSource;
+      REQUIRE(copyCounter == 2);
+      indirect_value<int, CopierWithCallback> engagedAssignee(std::in_place);
+      engagedAssignee = engagedSource;
+      REQUIRE(copyCounter == 3);
+    }
+  }
+}
+
+TEST_CASE("Working with an incomplete type", "[completeness.of.t]") {
+  class Incomplete;
+  using IV = indirect_value<Incomplete>;
+
+  // Don't execute this code. Just force the compiler to compile it,
+  // to see that it works with an incomplete type.
+  if (false) {
+    // Intentionally construct the object on the heap and don't call delete.
+    // This avoid calling the destructor which would require the value_type to
+    // be complete.
+    (void)new IV();
+    (void)new IV(std::move(*new IV()));
+    IV& iv = *new IV();
+    (void)iv.operator->();
+    (void)std::as_const(iv).operator->();
+    (void)iv.operator*();
+    (void)std::as_const(iv).operator*();
+    (void)std::move(iv).operator*();
+    (void)std::move(std::as_const(iv)).operator*();
+    (void)iv.value();
+    (void)std::as_const(iv).value();
+    (void)std::move(iv).value();
+    (void)std::move(std::as_const(iv)).value();
+    (void)iv.operator bool();
+    (void)iv.has_value();
+    swap(iv, iv);
+    iv.swap(iv);
   }
 }
 
