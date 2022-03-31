@@ -10,10 +10,15 @@
 #include <compare>
 #endif
 
-#ifdef __cpp_concepts
-#define ISOCPP_P1950_REQUIRES(x) requires x
+// MSVC does not apply EBCO for more than one base class, by default. To enable
+// it, you have to write `__declspec(empty_bases)` to the declaration of the
+// derived class. As indirect_value inherits from two EBCO - classes, one for
+// the copier and one for the deleter, we define a macro to inject that
+// __declspec under MSVC.
+#ifdef _MSC_VER
+#define ISOCPP_P1950_EMPTY_BASES __declspec(empty_bases)
 #else
-#define ISOCPP_P1950_REQUIRES(x)
+#define ISOCPP_P1950_EMPTY_BASES
 #endif
 
 namespace isocpp_p1950 {
@@ -30,35 +35,58 @@ class bad_indirect_value_access : public std::exception {
   }
 };
 
-template <class T, class C = default_copy<T>,
+template <class C,
           bool CanBeEmptyBaseClass = std::is_empty_v<C> && !std::is_final_v<C>>
-class indirect_value_base {
+class indirect_value_copy_base {
  protected:
-  template <class U = C,
-            class = std::enable_if_t<std::is_default_constructible_v<U>>>
-  indirect_value_base() noexcept(noexcept(C())) {}
-  indirect_value_base(C c) : c_(std::move(c)) {}
+  indirect_value_copy_base() = default;
+  indirect_value_copy_base(const C& c) : c_(c) {}
+  indirect_value_copy_base(C&& c) : c_(std::move(c)) {}
   C& get() noexcept { return c_; }
   const C& get() const noexcept { return c_; }
   C c_;
 };
 
-template <class T, class C>
-class indirect_value_base<T, C, true> : private C {
+template <class C>
+class indirect_value_copy_base<C, true> : private C {
  protected:
-  template <class U = C,
-            class = std::enable_if_t<std::is_default_constructible_v<U>>>
-  indirect_value_base() noexcept(noexcept(C())) {}
-  indirect_value_base(C c) : C(std::move(c)) {}
+  indirect_value_copy_base() = default;
+  indirect_value_copy_base(const C& c) : C(c) {}
+  indirect_value_copy_base(C&& c) : C(std::move(c)) {}
   C& get() noexcept { return *this; }
   const C& get() const noexcept { return *this; }
 };
 
-template <class T, class C = default_copy<T>, class D = std::default_delete<T>>
-class indirect_value : private indirect_value_base<T, C> {
-  using base = indirect_value_base<T, C>;
+template <class D,
+          bool CanBeEmptyBaseClass = std::is_empty_v<D> && !std::is_final_v<D>>
+class indirect_value_delete_base {
+ protected:
+  indirect_value_delete_base() = default;
+  indirect_value_delete_base(const D& d) : d_(d) {}
+  indirect_value_delete_base(D&& d) : d_(std::move(d)) {}
+  D& get() noexcept { return d_; }
+  const D& get() const noexcept { return d_; }
+  D d_;
+};
 
-  std::unique_ptr<T, D> ptr_;
+template <class D>
+class indirect_value_delete_base<D, true> : private D {
+ protected:
+  indirect_value_delete_base() = default;
+  indirect_value_delete_base(const D& d) : D(d) {}
+  indirect_value_delete_base(D&& d) : D(std::move(d)) {}
+  D& get() noexcept { return *this; }
+  const D& get() const noexcept { return *this; }
+};
+
+template <class T, class C = default_copy<T>, class D = std::default_delete<T>>
+class ISOCPP_P1950_EMPTY_BASES indirect_value
+    : private indirect_value_copy_base<C>,
+      private indirect_value_delete_base<D> {
+  using copy_base = indirect_value_copy_base<C>;
+  using delete_base = indirect_value_delete_base<D>;
+
+  T* ptr_ = nullptr;
 
  public:
   using value_type = T;
@@ -68,47 +96,48 @@ class indirect_value : private indirect_value_base<T, C> {
   indirect_value() = default;
 
   template <class... Ts>
-  explicit indirect_value(std::in_place_t, Ts&&... ts) {
-    ptr_ = std::unique_ptr<T, D>(new T(std::forward<Ts>(ts)...), D{});
-  }
+  explicit indirect_value(std::in_place_t, Ts&&... ts)
+      : ptr_(new T(std::forward<Ts>(ts)...)) {}
 
   template <class U, class = std::enable_if_t<std::is_same_v<T, U>>>
   explicit indirect_value(U* u, C c = C{}, D d = D{}) noexcept
-      : base(std::move(c)), ptr_(std::unique_ptr<T, D>(u, std::move(d))) {}
+      : copy_base(std::move(c)), delete_base(std::move(d)), ptr_(u) {}
 
   indirect_value(const indirect_value& i)
-      ISOCPP_P1950_REQUIRES(std::is_copy_constructible_v<T>)
-      : base(i.get_c()) {
-    if (i.ptr_) {
-      ptr_ = std::unique_ptr<T, D>(get_c()(*i.ptr_), i.ptr_.get_deleter());
-    }
-  }
+      : copy_base(i.get_c()), delete_base(i.get_d()), ptr_(i.make_raw_copy()) {}
 
   indirect_value(indirect_value&& i) noexcept
-      : base(std::move(i)), ptr_(std::exchange(i.ptr_, nullptr)) {}
+      : copy_base(std::move(i)),
+        delete_base(std::move(i)),
+        ptr_(std::exchange(i.ptr_, nullptr)) {}
 
-  indirect_value& operator=(const indirect_value& i)
-      ISOCPP_P1950_REQUIRES(std::is_copy_assignable_v<T>) {
-    base::operator=(i);
-    if (i.ptr_) {
-      ptr_ = std::unique_ptr<T, D>(get_c()(*i.ptr_), i.ptr_.get_deleter());
-    } else {
-      ptr_.reset();
-    }
+  indirect_value& operator=(const indirect_value& i) {
+    // When copying T throws, *this will remain unchanged.
+    // When assigning copy_base or delete_base throws,
+    // ptr_ will be null.
+    auto temp_guard = i.make_guarded_copy();
+    reset();
+    copy_base::operator=(i);
+    delete_base::operator=(i);
+    ptr_ = temp_guard.release();
     return *this;
   }
 
   indirect_value& operator=(indirect_value&& i) noexcept {
-    base::operator=(std::move(i));
-    ptr_ = std::exchange(i.ptr_, nullptr);
+    if (this != &i) {
+      reset();
+      copy_base::operator=(std::move(i));
+      delete_base::operator=(std::move(i));
+      ptr_ = std::exchange(i.ptr_, nullptr);
+    }
     return *this;
   }
 
-  ~indirect_value() = default;
+  ~indirect_value() { reset(); }
 
-  T* operator->() noexcept { return ptr_.operator->(); }
+  T* operator->() noexcept { return ptr_; }
 
-  const T* operator->() const noexcept { return ptr_.operator->(); }
+  const T* operator->() const noexcept { return ptr_; }
 
   T& operator*() & noexcept { return *ptr_; }
 
@@ -146,16 +175,15 @@ class indirect_value : private indirect_value_base<T, C> {
 
   const copier_type& get_copier() const noexcept { return get_c(); }
 
-  deleter_type& get_deleter() noexcept { return ptr_.get_deleter(); }
+  deleter_type& get_deleter() noexcept { return get_d(); }
 
-  const deleter_type& get_deleter() const noexcept {
-    return ptr_.get_deleter();
-  }
+  const deleter_type& get_deleter() const noexcept { return get_d(); }
 
   void swap(indirect_value& rhs) noexcept(
       std::is_nothrow_swappable_v<C>&& std::is_nothrow_swappable_v<D>) {
     using std::swap;
     swap(get_c(), rhs.get_c());
+    swap(get_d(), rhs.get_d());
     swap(ptr_, rhs.ptr_);
   }
 
@@ -167,8 +195,29 @@ class indirect_value : private indirect_value_base<T, C> {
   }
 
  private:
-  C& get_c() noexcept { return base::get(); }
-  const C& get_c() const noexcept { return base::get(); }
+  C& get_c() noexcept { return copy_base::get(); }
+  const C& get_c() const noexcept { return copy_base::get(); }
+  D& get_d() noexcept { return delete_base::get(); }
+  const D& get_d() const noexcept { return delete_base::get(); }
+
+  void reset() noexcept {
+    if (ptr_) {
+      // Make sure to first set ptr_ to nullptr before calling the deleter.
+      // This will protect us in case that the deleter invokes some code
+      // which again accesses ptr_.
+      get_d()(std::exchange(ptr_, nullptr));
+    }
+  }
+
+  T* make_raw_copy() const { return ptr_ ? get_c()(*ptr_) : nullptr; }
+
+  std::unique_ptr<T, std::reference_wrapper<const D>> make_guarded_copy()
+      const {
+    T* copiedPtr = make_raw_copy();
+    // Implies that D::operator() must be const qualified.
+    auto deleterRef = std::ref(get_d());
+    return {copiedPtr, deleterRef};
+  }
 };
 
 template <class T>
@@ -430,7 +479,8 @@ struct _conditionally_enabled_hash {
 
 template <class T>
 struct _conditionally_enabled_hash<T,
-                                   false> {  // conditionally disabled hash base
+                                   false> {  // conditionally disabled hash
+                                             // base
   _conditionally_enabled_hash() = delete;
   _conditionally_enabled_hash(const _conditionally_enabled_hash&) = delete;
   _conditionally_enabled_hash& operator=(const _conditionally_enabled_hash&) =
@@ -440,7 +490,6 @@ struct _conditionally_enabled_hash<T,
 }  // namespace isocpp_p1950
 
 namespace std {
-
 template <class T, class C, class D>
 struct hash<::isocpp_p1950::indirect_value<T, C, D>>
     : ::isocpp_p1950::_conditionally_enabled_hash<
