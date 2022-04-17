@@ -1,18 +1,18 @@
 # An indirect value-type for C++ (perfect-pimpl)
 
-[![conan][badge.conan]][conan]
+[![ConanCenter Package][badge.conan]][conan]
 [![codecov][badge.codecov]][codecov]
 [![language][badge.language]][language]
 [![license][badge.license]][license]
 [![issues][badge.issues]][issues]
 
-[badge.conan]: https://img.shields.io/github/workflow/status/jbcoe/indirect_value/Conan/main?label=Conan
+[badge.conan]: https://repology.org/badge/version-for-repo/conancenter/indirect_value.svg
 [badge.codecov]: https://img.shields.io/codecov/c/github/jbcoe/indirect_value/master.svg?logo=codecov
 [badge.language]: https://img.shields.io/badge/language-C%2B%2B17-yellow.svg
 [badge.license]: https://img.shields.io/badge/license-MIT-blue.svg
 [badge.issues]: https://img.shields.io/github/issues/jbcoe/indirect_value.svg
 
-[conan]: https://github.com/jbcoe/indirect_value/actions?query=workflow%3A%22Conan%22+branch%3Amain
+[conan]: https://conan.io/center/indirect_value
 [codecov]: https://codecov.io/gh/jbcoe/indirect_value
 [language]: https://en.wikipedia.org/wiki/C%2B%2B17
 [license]: https://en.wikipedia.org/wiki/MIT_License
@@ -66,10 +66,10 @@ interface_type::~interface_type() = default;
   - [CMake](#cmake)
     - [External](#external)
 - [Building](#building)
+  - [Building Manually Via CMake](#building-manually-via-cmake)
+  - [Installing Via CMake](#installing-via-cmake)
 - [Packaging](#packaging)
   - [Conan](#conan)
-    - [Building Conan Packages](#building-conan-packages)
-- [License](#license)
 
 # Integration
 Indirect value is shipped as a single header file, [`indirect_value.h`](https://github.com/jbcoe/indirect_value/blob/master/indirect_value.h) that can be directly included in your project or included via an official [release package](https://github.com/jbcoe/polymorphic_value/releases).
@@ -131,3 +131,14 @@ cd build
 cmake -G <generator> <configuration options> -DCMAKE_INSTALL_PREFIX=<install dir> ../
 cmake --install ../
 ```
+
+# Packaging
+
+The Indirect Value library is available for integration into your own project via our favorite package manager: [Conan](https://docs.conan.io/en/latest/).
+
+## Conan
+
+Polymorphic Value is now available on the Conan Center Index: https://conan.io/center/indirect_value.  Just include the following dependency in your `conanfile.txt` or `conanfile.py` within your project, install via Conan and build using build system of choice.
+
+```bash
+indirect_value/0.0.1
