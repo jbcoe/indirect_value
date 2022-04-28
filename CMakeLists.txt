@@ -167,14 +167,14 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
 
     install(
         TARGETS indirect_value
-        EXPORT indirect_value-target
+        EXPORT indirect_value-export-set
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
 
     install(
-        EXPORT indirect_value-target
+        EXPORT indirect_value-export-set
         NAMESPACE indirect_value::
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/indirect_value"
     )
