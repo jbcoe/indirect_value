@@ -28,7 +28,7 @@ propagate from the owning classes to the indirect_value type.
 Using `indirect_value` a pimpl class can be written as:
 
 ~~~ {.cpp}
-//---------------  Header file
+// header.h
 #include <indirect_value.h>
 
 class interface_type {
@@ -43,8 +43,10 @@ public:
 private:
     isocpp_p1950::indirect_value<class pimpl> pimpl_;
 };
+~~~
 
-//--------------- Source file
+~~~ {.cpp}
+// source.cc
 class pimpl {
     // Internal implementation details for the Pimpl
     ...
