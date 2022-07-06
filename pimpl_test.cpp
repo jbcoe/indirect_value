@@ -1,5 +1,6 @@
+#include "pimpl.h"
+
 #include "catch2/catch.hpp"
-#include "example_pimpl.h"
 
 TEST_CASE(
     "Basic life time operations of a pimpl now work for free via "

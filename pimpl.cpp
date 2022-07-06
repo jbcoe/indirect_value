@@ -1,4 +1,4 @@
-#include "example_pimpl.h"
+#include "pimpl.h"
 
 #include <cassert>
 #include <string>
