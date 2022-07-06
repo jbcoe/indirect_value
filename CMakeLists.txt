@@ -58,22 +58,22 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
             add_subdirectory(${catch2_SOURCE_DIR} ${catch2_BINARY_DIR})
         endif()
 
-        add_executable(test_indirect_value "")
-        target_sources(test_indirect_value
+        add_executable(indirect_value_test "")
+        target_sources(indirect_value_test
             PRIVATE
-                example_pimpl.h
-                example_pimpl.cpp
-                test_pimpl.cpp
-                test_indirect_value.cpp
+                pimpl.h
+                pimpl.cpp
+                pimpl_test.cpp
+                indirect_value_test.cpp
         )
 
-        target_link_libraries(test_indirect_value
+        target_link_libraries(indirect_value_test
             PRIVATE
                 indirect_value::indirect_value
                 Catch2::Catch2
         )
 
-        target_compile_options(test_indirect_value
+        target_compile_options(indirect_value_test
             PRIVATE
                 $<$<CXX_COMPILER_ID:MSVC>:/EHsc>
                 $<$<CXX_COMPILER_ID:MSVC>:/W4>
@@ -81,7 +81,7 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
                 $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:Clang>>:-Werror;-Wall;-Wno-self-assign-overloaded;-Wno-unknown-warning-option>
         )
 
-        set_target_properties(test_indirect_value PROPERTIES
+        set_target_properties(indirect_value_test PROPERTIES
             CXX_STANDARD 17
             CXX_STANDARD_REQUIRED YES
             CXX_EXTENSIONS NO
@@ -101,7 +101,7 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
                     INTERFACE_COMPILE_OPTIONS "${SANITIZER_FLAGS_ASAN}"
                     INTERFACE_LINK_OPTIONS "${SANITIZER_FLAGS_ASAN}"
                 )
-                target_link_libraries(test_indirect_value
+                target_link_libraries(indirect_value_test
                     PRIVATE
                         asan
                 )
@@ -113,7 +113,7 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
                     INTERFACE_COMPILE_OPTIONS "${SANITIZER_FLAGS_UBSAN}"
                     INTERFACE_LINK_OPTIONS "${SANITIZER_FLAGS_UBSAN}"
                 )
-                target_link_libraries(test_indirect_value
+                target_link_libraries(indirect_value_test
                     PRIVATE
                         ubsan
                 )
@@ -122,13 +122,13 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
 
         enable_testing()
         add_test(
-            NAME test_indirect_value
-            COMMAND test_indirect_value
+            NAME indirect_value_test
+            COMMAND indirect_value_test
             WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
         list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/contrib)
         include(Catch)
-        catch_discover_tests(test_indirect_value)
+        catch_discover_tests(indirect_value_test)
 
         if (ENABLE_CODE_COVERAGE)
             FetchContent_Declare(
@@ -144,7 +144,7 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
 
             set(ENABLE_COVERAGE ON CACHE BOOL "Enable coverage build." FORCE)
             find_package(codecov)
-            add_coverage(test_indirect_value)
+            add_coverage(indirect_value_test)
             list(APPEND LCOV_REMOVE_PATTERNS "'/usr/*'")
             coverage_evaluate()
         endif()
