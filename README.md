@@ -25,6 +25,69 @@ allocated object.  A `indirect_value<T>` may hold an object of class T, copying
 the indirect_value<T> will copy the object of T, and propagation of constness will
 propagate from the owning classes to the indirect_value type.
 
+using `indirect_value` a composite class can be written as:
+
+~~~ {.cpp}
+#include "indirect_value.h"
+
+class Composite {
+  indirect_value<A> a_;
+  indirect_value<B> b_;
+};
+~~~
+
+When `A` and `B` can be incomplete types. 
+
+If `A` and `B` are copyable then the compiler-generated copy constructor of `Composite` will copy
+each of the components using their copy constructors. (Note: If `A` and `B` are base classes and `a_` and `b_` may store
+derived-type objects then prefer (`polymorphic_value`)[https://github.com/jbcoe/polymorphic_value]).
+
+`indirect_value` propogates `const` unlike `std::unique_ptr` so may be better choice for member data of a composite class.
+
+```
+#include <iostream>
+#include <utility>
+
+#include "indirect_value.h"
+using isocpp_p1950::indirect_value;
+
+struct Component {
+  const char* foo() { return "non-const foo"; }
+  const char* foo() const { return "const foo"; }
+};
+
+class UniquePtrComposite {
+ public:
+  UniquePtrComposite() : c_(new Component()) {}
+  const char* foo() { return c_->foo(); }
+  const char* foo() const { return c_->foo(); }
+
+ private:
+  std::unique_ptr<Component> c_;
+};
+
+class IndirectValueComposite {
+ public:
+  IndirectValueComposite() : c_(new Component()) {}
+  const char* foo() { return c_->foo(); }
+  const char* foo() const { return c_->foo(); }
+
+ private:
+  indirect_value<Component> c_;
+};
+
+int main(int argc, const char** argv) {
+  UniquePtrComposite upc;
+  std::cout << upc.foo() << std::endl;                 // prints "non-const-foo"
+  std::cout << std::as_const(upc).foo() << std::endl;  // prints "non-const-foo"
+
+  IndirectValueComposite ivc;
+  std::cout << ivc.foo() << std::endl;                 // prints "non-const-foo"
+  std::cout << std::as_const(ivc).foo() << std::endl;  // prints "const-foo"
+}
+```
+
+
 Using `indirect_value` a pimpl class can be written as:
 
 ~~~ {.cpp}
