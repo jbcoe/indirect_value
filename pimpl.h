@@ -1,7 +1,7 @@
 #ifndef INDIRECT_VALUE_EXAMPLE_PIMPL_H
 #define INDIRECT_VALUE_EXAMPLE_PIMPL_H
 
-#include <indirect_value.h>
+#include "indirect_value.h"
 
 class example_pimpl {
  public:
