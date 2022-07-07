@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+cmake_policy(SET CMP0127 NEW)
 
 if(NOT DEFINED PROJECT_NAME)
     set(CPP_INDIRECT_IS_SUBPROJECT ON)
