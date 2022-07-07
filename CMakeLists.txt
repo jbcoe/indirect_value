@@ -38,7 +38,7 @@ target_sources(indirect_value
 
 target_compile_features(indirect_value
     INTERFACE
-        cxx_std_17
+        cxx_std_20
 )
 
 add_library(indirect_value::indirect_value ALIAS indirect_value)
