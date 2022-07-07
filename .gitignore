@@ -3,3 +3,4 @@ _build
 build/
 .idea/
 .vscode/
+bazel-*

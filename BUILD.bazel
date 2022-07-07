@@ -1,0 +1,32 @@
+cc_library(
+    name = "indirect_value",
+    hdrs = ["indirect_value.h"],
+    copts = ["-Iexternal/indirect_value/"],
+)
+
+cc_test(
+    name = "indirect_value_test",
+    srcs = [
+        "indirect_value_test.cpp",
+    ],
+    copts = ["-Iexternal/indirect_value/"],
+    deps = [
+        ":indirect_value",
+        "@catch2",
+    ],
+)
+
+cc_test(
+    name = "pimpl_test",
+    srcs = [
+        "pimpl.cpp",
+        "pimpl.h",
+        "pimpl_test.cpp",
+    ],
+    copts = ["-Iexternal/indirect_value/"],
+    defines = ["CATCH_CONFIG_MAIN"],
+    deps = [
+        ":indirect_value",
+        "@catch2",
+    ],
+)
