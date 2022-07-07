@@ -10,6 +10,12 @@
 #include <compare>
 #endif
 
+#ifdef __cpp_concepts
+#define ISOCPP_P1950_REQUIRES(x) requires x
+#else
+#define ISOCPP_P1950_REQUIRES(x)
+#endif
+
 // MSVC does not apply EBCO for more than one base class, by default. To enable
 // it, you have to write `__declspec(empty_bases)` to the declaration of the
 // derived class. As indirect_value inherits from two EBCO - classes, one for
@@ -34,6 +40,11 @@ class bad_indirect_value_access : public std::exception {
     return "bad_indirect_value_access";
   }
 };
+
+template <typename T, typename = void>
+constexpr bool is_complete_v = false;
+template <typename T>
+constexpr bool is_complete_v<T, std::enable_if_t<sizeof(T)>> = true;
 
 template <class C,
           bool CanBeEmptyBaseClass = std::is_empty_v<C> && !std::is_final_v<C>>
@@ -104,6 +115,8 @@ class ISOCPP_P1950_EMPTY_BASES indirect_value
       : copy_base(std::move(c)), delete_base(std::move(d)), ptr_(u) {}
 
   indirect_value(const indirect_value& i)
+      ISOCPP_P1950_REQUIRES((!is_complete_v<T>) ||
+                            std::is_copy_constructible_v<T>)
       : copy_base(i.get_c()), delete_base(i.get_d()), ptr_(i.make_raw_copy()) {}
 
   indirect_value(indirect_value&& i) noexcept
@@ -111,7 +124,9 @@ class ISOCPP_P1950_EMPTY_BASES indirect_value
         delete_base(std::move(i)),
         ptr_(std::exchange(i.ptr_, nullptr)) {}
 
-  indirect_value& operator=(const indirect_value& i) {
+  indirect_value& operator=(const indirect_value& i)
+      ISOCPP_P1950_REQUIRES((!is_complete_v<T>) ||
+                            std::is_copy_constructible_v<T>) {
     // When copying T throws, *this will remain unchanged.
     // When assigning copy_base or delete_base throws,
     // ptr_ will be null.
