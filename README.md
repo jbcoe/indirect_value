@@ -22,7 +22,7 @@ The class template `indirect_value` is proposed for addition to the C++ Standard
 
 The class template, `indirect_value`, confers value-like semantics on a free-store
 allocated object.  A `indirect_value<T>` may hold an object of class T, copying
-the indirect_value<T> will copy the object of T, and propagation of constness will
+the indirect_value<T> will copy the object of T, and const-ness will
 propagate from the owning classes to the indirect_value type.
 
 using `indirect_value` a composite class can be written as:
