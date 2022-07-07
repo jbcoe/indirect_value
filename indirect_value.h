@@ -124,7 +124,9 @@ class ISOCPP_P1950_EMPTY_BASES indirect_value
         delete_base(std::move(i)),
         ptr_(std::exchange(i.ptr_, nullptr)) {}
 
-  indirect_value& operator=(const indirect_value& i) {
+  indirect_value& operator=(const indirect_value& i)
+      ISOCPP_P1950_REQUIRES((!is_complete_v<T> ||
+                             std::is_copy_constructible_v<T>)) {
     // When copying T throws, *this will remain unchanged.
     // When assigning copy_base or delete_base throws,
     // ptr_ will be null.
