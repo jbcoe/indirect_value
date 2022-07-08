@@ -31,7 +31,27 @@ namespace isocpp_p1950 {
 
 template <class T>
 struct default_copy {
+  using deleter_type = std::default_delete<T>;
   T* operator()(const T& t) const { return new T(t); }
+};
+
+template <class T, class = void>
+struct copier_traits_deleter_base {};
+
+template <class T>
+struct copier_traits_deleter_base<T, std::void_t<typename T::deleter_type>> {
+  using deleter_type = typename T::deleter_type;
+};
+
+template <class U, class V>
+struct copier_traits_deleter_base<U* (*)(V)> {
+  using deleter_type = void (*)(U*);
+};
+
+// The user may specialize copier_traits<T> per [namespace.std]/2.
+template <class T>
+struct copier_traits
+    : copier_traits_deleter_base<T, void> {
 };
 
 class bad_indirect_value_access : public std::exception {
@@ -90,7 +110,7 @@ class indirect_value_delete_base<D, true> : private D {
   const D& get() const noexcept { return *this; }
 };
 
-template <class T, class C = default_copy<T>, class D = std::default_delete<T>>
+template <class T, class C = default_copy<T>, class D = typename copier_traits<C>::deleter_type>
 class ISOCPP_P1950_EMPTY_BASES indirect_value
     : private indirect_value_copy_base<C>,
       private indirect_value_delete_base<D> {
@@ -110,8 +130,22 @@ class ISOCPP_P1950_EMPTY_BASES indirect_value
   explicit indirect_value(std::in_place_t, Ts&&... ts)
       : ptr_(new T(std::forward<Ts>(ts)...)) {}
 
+  template <class U, class = std::enable_if_t<std::is_same_v<T, U> &&
+      std::is_default_constructible_v<C> &&
+      not std::is_pointer_v<C> &&
+      std::is_default_constructible_v<D> &&
+      not std::is_pointer_v<D>>>
+  explicit indirect_value(U* u) noexcept
+      : copy_base(C{}), delete_base(D{}), ptr_(u) {}
+
+  template <class U, class = std::enable_if_t<std::is_same_v<T, U> &&
+      std::is_default_constructible_v<D> &&
+      not std::is_pointer_v<D>>>
+  indirect_value(U* u, C c) noexcept
+      : copy_base(std::move(c)), delete_base(D{}), ptr_(u) {}
+
   template <class U, class = std::enable_if_t<std::is_same_v<T, U>>>
-  explicit indirect_value(U* u, C c = C{}, D d = D{}) noexcept
+  indirect_value(U* u, C c, D d) noexcept
       : copy_base(std::move(c)), delete_base(std::move(d)), ptr_(u) {}
 
   indirect_value(const indirect_value& i)

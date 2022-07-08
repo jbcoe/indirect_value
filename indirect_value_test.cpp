@@ -336,10 +336,10 @@ TEST_CASE("Swap overload for indirect_value", "[swap.primitive]") {
 
     constexpr int a_value = 5;
     constexpr int b_value = 10;
-    indirect_value<int, decltype(+default_copy_lambda_a)> a{
-        new int(a_value), default_copy_lambda_a};
-    indirect_value<int, decltype(+default_copy_lambda_b)> b{
-        new int(b_value), default_copy_lambda_b};
+    indirect_value<int, decltype(+default_copy_lambda_a),
+      std::default_delete<int>> a{new int(a_value), default_copy_lambda_a};
+    indirect_value<int, decltype(+default_copy_lambda_b),
+      std::default_delete<int>> b{new int(b_value), default_copy_lambda_b};
 
     THEN(
         "Confirm sized base class is used and its size requirements meet our "
@@ -510,6 +510,7 @@ TEST_CASE("Calling value on an enganged indirect_value will not throw",
 TEST_CASE("get_copier returns modifiable lvalue reference", "[TODO]") {
   GIVEN("An lvalue of indirect_value with a modifiable copier") {
     struct Copier {
+      using deleter_type = std::default_delete<int>;
       std::string name;
       int* operator()(int x) const {
         REQUIRE(name == "Modified");
@@ -1000,6 +1001,10 @@ struct CopierWithCallback {
     callback();
     return new T(t);
   }
+};
+template<>
+struct isocpp_p1950::copier_traits<CopierWithCallback> {
+  using deleter_type = std::default_delete<int>;
 };
 
 TEST_CASE("Use source copier when copying", "[TODO]") {
