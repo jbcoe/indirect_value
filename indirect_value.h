@@ -141,11 +141,11 @@ class ISOCPP_P1950_EMPTY_BASES indirect_value
   template <class U, class = std::enable_if_t<std::is_same_v<T, U> &&
       std::is_default_constructible_v<D> &&
       not std::is_pointer_v<D>>>
-  indirect_value(U* u, C c) noexcept
+  explicit indirect_value(U* u, C c) noexcept
       : copy_base(std::move(c)), delete_base(D{}), ptr_(u) {}
 
   template <class U, class = std::enable_if_t<std::is_same_v<T, U>>>
-  indirect_value(U* u, C c, D d) noexcept
+  explicit indirect_value(U* u, C c, D d) noexcept
       : copy_base(std::move(c)), delete_base(std::move(d)), ptr_(u) {}
 
   indirect_value(const indirect_value& i)
