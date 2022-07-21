@@ -29,18 +29,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using isocpp_p1950::bad_indirect_value_access;
 using isocpp_p1950::indirect_value;
 
-/*! Helper function to capture constexpr results in catch test reporting.
-    \note
-        Credit to Jason Turner:
-   https://twitter.com/lefticus/status/980530307580514304 \tparam B Compile time
-   condition. \return The compile time condition result.
- */
-template <bool B>
-constexpr bool static_test() {
-  static_assert(B);
-  return B;
-}
-
 // Helper function to write unit tests for self assign.
 // Compiler emit the warnings -Wself-assign-overload and -Wself-move
 // when assigning a variable to itself. This function avoids these warnings.
@@ -51,17 +39,17 @@ void SelfAssign(T& t, U&& u) {
 
 TEST_CASE("Ensure that indirect_value uses the minimum space requirements",
           "[indirect_value.sizeof]") {
-  REQUIRE(static_test<sizeof(indirect_value<int>) ==
-                      sizeof(std::unique_ptr<int>)>());
+  STATIC_REQUIRE(sizeof(indirect_value<int>) ==
+                 sizeof(std::unique_ptr<int>));
 
   struct CopyDeleteHybrid {  // Same type for copy and delete
     void operator()(int* p) { delete p; }
     int* operator()(const int& s) { return new int(s); }
   };
 
-  REQUIRE(static_test<
+  STATIC_REQUIRE(
           sizeof(indirect_value<int, CopyDeleteHybrid, CopyDeleteHybrid>) ==
-          sizeof(std::unique_ptr<int>)>());
+          sizeof(std::unique_ptr<int>));
 }
 
 template <typename T>
@@ -364,16 +352,14 @@ TEST_CASE("Swap overload for indirect_value", "[swap.primitive]") {
     THEN(
         "Confirm sized base class is used and its size requirements meet our "
         "expectations") {
-      REQUIRE(
-          static_test<sizeof(decltype(a)) != sizeof(indirect_value<int>)>());
-      REQUIRE(
-          static_test<sizeof(decltype(b)) != sizeof(indirect_value<int>)>());
-      REQUIRE(static_test<sizeof(decltype(a)) ==
+      STATIC_REQUIRE(sizeof(decltype(a)) != sizeof(indirect_value<int>));
+      STATIC_REQUIRE(sizeof(decltype(b)) != sizeof(indirect_value<int>));
+      STATIC_REQUIRE(sizeof(decltype(a)) ==
                           (sizeof(indirect_value<int>) +
-                           sizeof(decltype(+default_copy_lambda_a)))>());
-      REQUIRE(static_test<sizeof(decltype(b)) ==
+                           sizeof(decltype(+default_copy_lambda_a))));
+      STATIC_REQUIRE(sizeof(decltype(b)) ==
                           (sizeof(indirect_value<int>) +
-                           sizeof(decltype(+default_copy_lambda_b)))>());
+                           sizeof(decltype(+default_copy_lambda_b))));
     }
 
     WHEN("The contents are swap") {
@@ -391,13 +377,13 @@ TEMPLATE_TEST_CASE("Noexcept of observers", "[TODO]", indirect_value<int>&,
                    const indirect_value<int>&, indirect_value<int>&&,
                    const indirect_value<int>&&) {
   using T = TestType;
-  static_assert(noexcept(std::declval<T>().operator->()));
-  static_assert(noexcept(std::declval<T>().operator*()));
-  static_assert(!noexcept(std::declval<T>().value()));
-  static_assert(noexcept(std::declval<T>().operator bool()));
-  static_assert(noexcept(std::declval<T>().has_value()));
-  static_assert(noexcept(std::declval<T>().get_copier()));
-  static_assert(noexcept(std::declval<T>().get_deleter()));
+  STATIC_REQUIRE(noexcept(std::declval<T>().operator->()));
+  STATIC_REQUIRE(noexcept(std::declval<T>().operator*()));
+  STATIC_REQUIRE(!noexcept(std::declval<T>().value()));
+  STATIC_REQUIRE(noexcept(std::declval<T>().operator bool()));
+  STATIC_REQUIRE(noexcept(std::declval<T>().has_value()));
+  STATIC_REQUIRE(noexcept(std::declval<T>().get_copier()));
+  STATIC_REQUIRE(noexcept(std::declval<T>().get_deleter()));
 }
 
 template <class T, class U>
@@ -423,17 +409,17 @@ TEMPLATE_TEST_CASE("Ref- and const-qualifier of observers", "[TODO]",
                    indirect_value<int>&&, const indirect_value<int>&&) {
   using T = TestType;
 
-  static_assert(
+  STATIC_REQUIRE(
       same_const_and_ref_qualifiers<T,
                                     decltype(std::declval<T>().operator*())>);
-  static_assert(
+  STATIC_REQUIRE(
       same_const_and_ref_qualifiers<T, decltype(std::declval<T>().value())>);
-  static_assert(
+  STATIC_REQUIRE(
       std::is_same_v<bool, decltype(std::declval<T>().operator bool())>);
-  static_assert(std::is_same_v<bool, decltype(std::declval<T>().has_value())>);
-  static_assert(
+  STATIC_REQUIRE(std::is_same_v<bool, decltype(std::declval<T>().has_value())>);
+  STATIC_REQUIRE(
       same_const_qualifiers<T, decltype(std::declval<T>().get_copier())>);
-  static_assert(
+  STATIC_REQUIRE(
       same_const_qualifiers<T, decltype(std::declval<T>().get_deleter())>);
 }
 
@@ -450,12 +436,12 @@ TEST_CASE("Test properties of bad_indirect_value_access", "[TODO]") {
     REQUIRE(what.size() > 0);
   }
 
-  static_assert(std::is_base_of_v<std::exception, bad_indirect_value_access>);
-  static_assert(
+  STATIC_REQUIRE(std::is_base_of_v<std::exception, bad_indirect_value_access>);
+  STATIC_REQUIRE(
       std::is_nothrow_default_constructible_v<bad_indirect_value_access>);
-  static_assert(
+  STATIC_REQUIRE(
       std::is_nothrow_copy_constructible_v<bad_indirect_value_access>);
-  static_assert(noexcept(ex.what()));
+  STATIC_REQUIRE(noexcept(ex.what()));
 }
 
 TEST_CASE("Calling value on empty indirect_value will throw", "[TODO]") {
@@ -1374,12 +1360,12 @@ TEST_CASE(
     "[TODO]") {
   struct NonComparable {};
   using IV = indirect_value<NonComparable>;
-  static_assert(!Compare<IV, NonComparable, std::equal_to<>>);
-  static_assert(!Compare<IV, NonComparable, std::not_equal_to<>>);
-  static_assert(!Compare<IV, NonComparable, std::less<>>);
-  static_assert(!Compare<IV, NonComparable, std::greater<>>);
-  static_assert(!Compare<IV, NonComparable, std::less_equal<>>);
-  static_assert(!Compare<IV, NonComparable, std::greater_equal<>>);
+  STATIC_REQUIRE(!Compare<IV, NonComparable, std::equal_to<>>);
+  STATIC_REQUIRE(!Compare<IV, NonComparable, std::not_equal_to<>>);
+  STATIC_REQUIRE(!Compare<IV, NonComparable, std::less<>>);
+  STATIC_REQUIRE(!Compare<IV, NonComparable, std::greater<>>);
+  STATIC_REQUIRE(!Compare<IV, NonComparable, std::less_equal<>>);
+  STATIC_REQUIRE(!Compare<IV, NonComparable, std::greater_equal<>>);
 }
 
 #endif
@@ -1412,7 +1398,7 @@ TEST_CASE("Hash for indirect_value", "[TODO]") {
 
     THEN("The hash should be zero") {
       REQUIRE(std::hash<indirect_value<int>>{}(empty) == 0);
-      static_assert(IsHashable<indirect_value<int>>::IsNoexcept);
+      STATIC_REQUIRE(IsHashable<indirect_value<int>>::IsNoexcept);
     }
   }
 
@@ -1428,15 +1414,15 @@ TEST_CASE("Hash for indirect_value", "[TODO]") {
   }
 
   GIVEN("A type which is not hashable") {
-    static_assert(!IsHashable<ProvidesNoHash>::value);
-    static_assert(!IsHashable<indirect_value<ProvidesNoHash>>::value);
+    STATIC_REQUIRE(!IsHashable<ProvidesNoHash>::value);
+    STATIC_REQUIRE(!IsHashable<indirect_value<ProvidesNoHash>>::value);
   }
 
   GIVEN("A type which is hashable and std::hash throws") {
-    static_assert(IsHashable<ProvidesThrowingHash>::value);
-    static_assert(IsHashable<indirect_value<ProvidesThrowingHash>>::value);
-    static_assert(!IsHashable<ProvidesThrowingHash>::IsNoexcept);
-    static_assert(
+    STATIC_REQUIRE(IsHashable<ProvidesThrowingHash>::value);
+    STATIC_REQUIRE(IsHashable<indirect_value<ProvidesThrowingHash>>::value);
+    STATIC_REQUIRE(!IsHashable<ProvidesThrowingHash>::IsNoexcept);
+    STATIC_REQUIRE(
         !IsHashable<indirect_value<ProvidesThrowingHash>>::IsNoexcept);
   }
 }
