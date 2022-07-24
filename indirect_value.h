@@ -70,9 +70,7 @@ struct copier_traits_deleter_base<U* (*)(V)> {
 
 // The user may specialize copier_traits<T> per [namespace.std]/2.
 template <class T>
-struct copier_traits
-    : copier_traits_deleter_base<T, void> {
-};
+struct copier_traits : copier_traits_deleter_base<T, void> {};
 
 class bad_indirect_value_access : public std::exception {
  public:
@@ -130,7 +128,8 @@ class indirect_value_delete_base<D, true> : private D {
   const D& get() const noexcept { return *this; }
 };
 
-template <class T, class C = default_copy<T>, class D = typename copier_traits<C>::deleter_type>
+template <class T, class C = default_copy<T>,
+          class D = typename copier_traits<C>::deleter_type>
 class ISOCPP_P1950_EMPTY_BASES indirect_value
     : private indirect_value_copy_base<C>,
       private indirect_value_delete_base<D> {
@@ -139,28 +138,29 @@ class ISOCPP_P1950_EMPTY_BASES indirect_value
 
   T* ptr_ = nullptr;
 
+  indirect_value() = default;
+
  public:
   using value_type = T;
   using copier_type = C;
   using deleter_type = D;
 
-  indirect_value() = default;
-
   template <class... Ts>
   explicit indirect_value(std::in_place_t, Ts&&... ts)
       : ptr_(new T(std::forward<Ts>(ts)...)) {}
 
-  template <class U, class = std::enable_if_t<std::is_same_v<T, U> &&
-      std::is_default_constructible_v<C> &&
-      not std::is_pointer_v<C> &&
-      std::is_default_constructible_v<D> &&
-      not std::is_pointer_v<D>>>
+  template <class U,
+            class = std::enable_if_t<
+                std::is_same_v<T, U> && std::is_default_constructible_v<C> &&
+                not std::is_pointer_v<C> &&
+                std::is_default_constructible_v<D> && not std::is_pointer_v<D>>>
   explicit indirect_value(U* u) noexcept
       : copy_base(C{}), delete_base(D{}), ptr_(u) {}
 
-  template <class U, class = std::enable_if_t<std::is_same_v<T, U> &&
-      std::is_default_constructible_v<D> &&
-      not std::is_pointer_v<D>>>
+  template <class U,
+            class = std::enable_if_t<std::is_same_v<T, U> &&
+                                     std::is_default_constructible_v<D> &&
+                                     not std::is_pointer_v<D>>>
   explicit indirect_value(U* u, C c) noexcept
       : copy_base(std::move(c)), delete_base(D{}), ptr_(u) {}
 
@@ -204,41 +204,37 @@ class ISOCPP_P1950_EMPTY_BASES indirect_value
 
   ~indirect_value() { reset(); }
 
-  T* operator->() noexcept { return ptr_; }
+  T* operator->() noexcept {
+    assert(!valueless_after_move());
+    return ptr_;
+  }
 
-  const T* operator->() const noexcept { return ptr_; }
+  const T* operator->() const noexcept {
+    assert(!valueless_after_move());
+    return ptr_;
+  }
 
-  T& operator*() & noexcept { return *ptr_; }
-
-  const T& operator*() const& noexcept { return *ptr_; }
-
-  T&& operator*() && noexcept { return std::move(*ptr_); }
-
-  const T&& operator*() const&& noexcept { return std::move(*ptr_); }
-
-  T& value() & {
-    if (!ptr_) throw bad_indirect_value_access();
+  T& operator*() & noexcept {
+    assert(!valueless_after_move());
     return *ptr_;
   }
 
-  const T& value() const& {
-    if (!ptr_) throw bad_indirect_value_access();
+  const T& operator*() const& noexcept {
+    assert(!valueless_after_move());
     return *ptr_;
   }
 
-  T&& value() && {
-    if (!ptr_) throw bad_indirect_value_access();
+  T&& operator*() && noexcept {
+    assert(!valueless_after_move());
     return std::move(*ptr_);
   }
 
-  const T&& value() const&& {
-    if (!ptr_) throw bad_indirect_value_access();
+  const T&& operator*() const&& noexcept {
+    assert(!valueless_after_move());
     return std::move(*ptr_);
   }
 
-  explicit constexpr operator bool() const noexcept { return ptr_ != nullptr; }
-
-  bool has_value() const noexcept { return ptr_ != nullptr; }
+  bool valueless_after_move() const { return ptr_ == nullptr; }
 
   copier_type& get_copier() noexcept { return get_c(); }
 

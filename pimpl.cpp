@@ -32,9 +32,9 @@ class pimpl {
   std::string name_;
 };
 
-example_pimpl::example_pimpl() : pimpl_(new pimpl) {}
+example_pimpl::example_pimpl() : pimpl_(std::in_place) {}
 
-example_pimpl::example_pimpl(char const* const name) : pimpl_(new pimpl) {
+example_pimpl::example_pimpl(char const* const name) : pimpl_(std::in_place) {
   assert(name);
   pimpl_->set_name(name);
 }

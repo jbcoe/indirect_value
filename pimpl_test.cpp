@@ -36,7 +36,6 @@ TEST_CASE(
 
       THEN("Ensure the copied class mirrors the original") {
         REQUIRE(std::string(a.get_name()) == std::string(b.get_name()));
-        REQUIRE(b.is_valid() == true);
       }
     }
     WHEN("Moving constructing an instance.") {
@@ -45,7 +44,6 @@ TEST_CASE(
 
       THEN("Ensure the moved class has the contents of the original") {
         REQUIRE(std::string(b.get_name()) == std::string(string_location));
-        REQUIRE(a.is_valid() == false);
       }
     }
     WHEN("Copying assigning across to a default constructed instance.") {
@@ -55,7 +53,6 @@ TEST_CASE(
 
       THEN("Ensure the copied class mirrors the original") {
         REQUIRE(std::string(a.get_name()) == std::string(b.get_name()));
-        REQUIRE(b.is_valid() == true);
       }
     }
     WHEN("Moving assigning across to a default constructed instance.") {
@@ -65,7 +62,6 @@ TEST_CASE(
 
       THEN("Ensure the moved class has the contents of the original") {
         REQUIRE(std::string(b.get_name()) == std::string(string_location));
-        REQUIRE(a.is_valid() == false);
       }
     }
   }

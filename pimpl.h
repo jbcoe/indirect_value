@@ -33,8 +33,6 @@ class example_pimpl {
   example_pimpl& operator=(const example_pimpl& rhs);
   ~example_pimpl();
 
-  const bool is_valid() const noexcept { return static_cast<bool>(pimpl_); }
-
   // Abstract string representation for ABI safety.
   char const* const get_name() const noexcept;
   void set_name(char const* const name);
