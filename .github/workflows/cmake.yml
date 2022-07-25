@@ -48,6 +48,12 @@ jobs:
               lib: "libstdc++11",
             }
           - {
+              name: "Ubuntu GCC-12",
+              os: ubuntu-20.04,
+              compiler: { type: GCC, version: 11, cc: "gcc-12", cxx: "g++-12" },
+              lib: "libstdc++11",
+            }
+          - {
               name: "Ubuntu Clang-10 + libc++",
               os: ubuntu-20.04,
               compiler:
