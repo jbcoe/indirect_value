@@ -180,7 +180,7 @@ TEST_CASE("Move construction for indirect_value of a primitive type",
           "leaving it in a null state") {
         REQUIRE(*b == a_value);
         REQUIRE(b.operator->() == location_of_a);
-        REQUIRE(a.operator->() == nullptr);
+        REQUIRE(a.valueless_after_move());
       }
     }
   }
@@ -205,7 +205,7 @@ TEST_CASE("Move assignment for indirect_value of a primitive type",
           "value `b`, leaving that object, `b`, in a null state") {
         REQUIRE(*a == b_value);
         REQUIRE(a.operator->() == location_of_b);
-        REQUIRE(b.operator->() == nullptr);
+        REQUIRE(b.valueless_after_move());
       }
     }
   }
@@ -274,9 +274,7 @@ TEMPLATE_TEST_CASE("Noexcept of observers", "[TODO]", indirect_value<int>&,
   using T = TestType;
   STATIC_REQUIRE(noexcept(std::declval<T>().operator->()));
   STATIC_REQUIRE(noexcept(std::declval<T>().operator*()));
-  STATIC_REQUIRE(!noexcept(std::declval<T>().value()));
-  STATIC_REQUIRE(noexcept(std::declval<T>().operator bool()));
-  STATIC_REQUIRE(noexcept(std::declval<T>().has_value()));
+  STATIC_REQUIRE(noexcept(std::declval<T>().valueless_after_move()));
   STATIC_REQUIRE(noexcept(std::declval<T>().get_copier()));
   STATIC_REQUIRE(noexcept(std::declval<T>().get_deleter()));
 }
@@ -307,11 +305,7 @@ TEMPLATE_TEST_CASE("Ref- and const-qualifier of observers", "[TODO]",
   STATIC_REQUIRE(
       same_const_and_ref_qualifiers<T,
                                     decltype(std::declval<T>().operator*())>);
-  STATIC_REQUIRE(
-      same_const_and_ref_qualifiers<T, decltype(std::declval<T>().value())>);
-  STATIC_REQUIRE(
-      std::is_same_v<bool, decltype(std::declval<T>().operator bool())>);
-  STATIC_REQUIRE(std::is_same_v<bool, decltype(std::declval<T>().has_value())>);
+  STATIC_REQUIRE(std::is_same_v<bool, decltype(std::declval<T>().valueless_after_move())>);
   STATIC_REQUIRE(
       same_const_qualifiers<T, decltype(std::declval<T>().get_copier())>);
   STATIC_REQUIRE(
@@ -418,21 +412,21 @@ void TestCopyAndDeleteStats() {
 
   stats::reset();
   {
-    IV empty;
-    auto copyConstructFromEmpty = empty;
+    IV defaultConstructed;
+    auto copyConstructFromDefault = defaultConstructed;
   }
   REQUIRE(stats::default_ctor_count == 2);
   REQUIRE(stats::copy_ctor_count == 2);
   REQUIRE(stats::move_ctor_count == 0);
   REQUIRE(stats::copy_assign_count == 0);
   REQUIRE(stats::move_assign_count == 0);
-  REQUIRE(stats::copy_operator_count == 0);
-  REQUIRE(stats::delete_operator_count == 0);
+  REQUIRE(stats::copy_operator_count == 1);
+  REQUIRE(stats::delete_operator_count == 2);
 
   stats::reset();
   {
-    IV empty;
-    auto moveConstructFromEmpty = std::move(empty);
+    IV defaultConstructed;
+    auto moveConstructFromEmpty = std::move(defaultConstructed);
   }
   REQUIRE(stats::default_ctor_count == 2);
   REQUIRE(stats::copy_ctor_count == 0);
@@ -440,27 +434,27 @@ void TestCopyAndDeleteStats() {
   REQUIRE(stats::copy_assign_count == 0);
   REQUIRE(stats::move_assign_count == 0);
   REQUIRE(stats::copy_operator_count == 0);
-  REQUIRE(stats::delete_operator_count == 0);
+  REQUIRE(stats::delete_operator_count == 1);
 
   stats::reset();
   {
-    IV empty;
+    IV defaultConstructed;
     IV copyAssignEmptyFromEmpty;
-    copyAssignEmptyFromEmpty = empty;
+    copyAssignEmptyFromEmpty = defaultConstructed;
   }
   REQUIRE(stats::default_ctor_count == 4);
   REQUIRE(stats::copy_ctor_count == 0);
   REQUIRE(stats::move_ctor_count == 0);
   REQUIRE(stats::copy_assign_count == 2);
   REQUIRE(stats::move_assign_count == 0);
-  REQUIRE(stats::copy_operator_count == 0);
-  REQUIRE(stats::delete_operator_count == 0);
+  REQUIRE(stats::copy_operator_count == 1);
+  REQUIRE(stats::delete_operator_count == 3);
 
   stats::reset();
   {
-    IV empty;
+    IV defaultConstructed;
     IV moveAssignEmptyFromEmpty;
-    moveAssignEmptyFromEmpty = std::move(empty);
+    moveAssignEmptyFromEmpty = std::move(defaultConstructed);
   }
   REQUIRE(stats::default_ctor_count == 4);
   REQUIRE(stats::copy_ctor_count == 0);
@@ -468,27 +462,27 @@ void TestCopyAndDeleteStats() {
   REQUIRE(stats::copy_assign_count == 0);
   REQUIRE(stats::move_assign_count == 2);
   REQUIRE(stats::copy_operator_count == 0);
-  REQUIRE(stats::delete_operator_count == 0);
+  REQUIRE(stats::delete_operator_count == 2);
 
   stats::reset();
   {
-    IV empty;
-    IV copyAssignEngagedFromEmpty(std::in_place);
-    copyAssignEngagedFromEmpty = empty;
+    IV defaultConstructed;
+    IV copyAssignEngagedFromDefault(std::in_place);
+    copyAssignEngagedFromDefault = defaultConstructed;
   }
   REQUIRE(stats::default_ctor_count == 4);
   REQUIRE(stats::copy_ctor_count == 0);
   REQUIRE(stats::move_ctor_count == 0);
   REQUIRE(stats::copy_assign_count == 2);
   REQUIRE(stats::move_assign_count == 0);
-  REQUIRE(stats::copy_operator_count == 0);
-  REQUIRE(stats::delete_operator_count == 1);
+  REQUIRE(stats::copy_operator_count == 1);
+  REQUIRE(stats::delete_operator_count == 3);
 
   stats::reset();
   {
-    IV empty;
-    IV moveAssignEngagedFromEmpty(std::in_place);
-    moveAssignEngagedFromEmpty = std::move(empty);
+    IV defaultConstructed;
+    IV moveAssignEngagedFromDefault(std::in_place);
+    moveAssignEngagedFromDefault = std::move(defaultConstructed);
   }
   REQUIRE(stats::default_ctor_count == 4);
   REQUIRE(stats::copy_ctor_count == 0);
@@ -496,12 +490,12 @@ void TestCopyAndDeleteStats() {
   REQUIRE(stats::copy_assign_count == 0);
   REQUIRE(stats::move_assign_count == 2);
   REQUIRE(stats::copy_operator_count == 0);
-  REQUIRE(stats::delete_operator_count == 1);
+  REQUIRE(stats::delete_operator_count == 2);
 
   stats::reset();
   {
-    IV empty;
-    SelfAssign(empty, empty);
+    IV defaultConstructed;
+    SelfAssign(defaultConstructed, defaultConstructed);
   }
   REQUIRE(stats::default_ctor_count == 2);
   REQUIRE(stats::copy_ctor_count == 0);
@@ -509,13 +503,13 @@ void TestCopyAndDeleteStats() {
   // Depending on how you implement the protection against self assign
   REQUIRE((stats::copy_assign_count == 0 || stats::copy_assign_count == 2));
   REQUIRE(stats::move_assign_count == 0);
-  REQUIRE(stats::copy_operator_count == 0);
-  REQUIRE(stats::delete_operator_count == 0);
+  REQUIRE(stats::copy_operator_count == 1);
+  REQUIRE(stats::delete_operator_count == 2);
 
   stats::reset();
   {
-    IV empty;
-    SelfAssign(empty, std::move(empty));
+    IV defaultConstructed;
+    SelfAssign(defaultConstructed, std::move(defaultConstructed));
   }
   REQUIRE(stats::default_ctor_count == 2);
   REQUIRE(stats::copy_ctor_count == 0);
@@ -524,12 +518,12 @@ void TestCopyAndDeleteStats() {
   // Depending on how you implement the protection against self assign
   REQUIRE((stats::move_assign_count == 0 || stats::move_assign_count == 2));
   REQUIRE(stats::copy_operator_count == 0);
-  REQUIRE(stats::delete_operator_count == 0);
+  REQUIRE(stats::delete_operator_count == 1);
 
   stats::reset();
   {
-    IV empty;
-    swap(empty, empty);
+    IV defaultConstructed;
+    swap(defaultConstructed, defaultConstructed);
   }
   REQUIRE(stats::default_ctor_count == 2);
   REQUIRE(stats::copy_ctor_count == 0);
@@ -537,7 +531,7 @@ void TestCopyAndDeleteStats() {
   REQUIRE(stats::copy_assign_count == 0);
   REQUIRE(stats::move_assign_count == 4);
   REQUIRE(stats::copy_operator_count == 0);
-  REQUIRE(stats::delete_operator_count == 0);
+  REQUIRE(stats::delete_operator_count == 1);
 
   // Tests with an engaged IV
 
@@ -570,8 +564,8 @@ void TestCopyAndDeleteStats() {
   stats::reset();
   {
     IV engaged(std::in_place);
-    IV copyAssignEmptyFromEngaged;
-    copyAssignEmptyFromEngaged = engaged;
+    IV copyAssignDefaultFromEngaged;
+    copyAssignDefaultFromEngaged = engaged;
   }
   REQUIRE(stats::default_ctor_count == 4);
   REQUIRE(stats::copy_ctor_count == 0);
@@ -579,13 +573,13 @@ void TestCopyAndDeleteStats() {
   REQUIRE(stats::copy_assign_count == 2);
   REQUIRE(stats::move_assign_count == 0);
   REQUIRE(stats::copy_operator_count == 1);
-  REQUIRE(stats::delete_operator_count == 2);
+  REQUIRE(stats::delete_operator_count == 3);
 
   stats::reset();
   {
     IV engaged(std::in_place);
-    IV moveAssignEmptyFromEngaged;
-    moveAssignEmptyFromEngaged = std::move(engaged);
+    IV moveAssignDefaultedFromEngaged;
+    moveAssignDefaultedFromEngaged = std::move(engaged);
   }
   REQUIRE(stats::default_ctor_count == 4);
   REQUIRE(stats::copy_ctor_count == 0);
@@ -593,7 +587,7 @@ void TestCopyAndDeleteStats() {
   REQUIRE(stats::copy_assign_count == 0);
   REQUIRE(stats::move_assign_count == 2);
   REQUIRE(stats::copy_operator_count == 0);
-  REQUIRE(stats::delete_operator_count == 1);
+  REQUIRE(stats::delete_operator_count == 2);
 
   stats::reset();
   {
@@ -865,28 +859,6 @@ TEST_CASE("Relational operators between two indirect_values of different type",
       REQUIRE(!(a > b));
       REQUIRE(a <= b);
       REQUIRE(!(a >= b));
-    }
-  }
-}
-
-TEST_CASE("Relational operators between an indirect_value and nullptr",
-          "[TODO]") {
-  GIVEN("A non-empty indirect_value") {
-    const indirect_value<int> nonEmpty(std::in_place);
-
-    THEN("The value should be unequal to nullptr") {
-      REQUIRE(!(nonEmpty == nullptr));
-      REQUIRE(!(nullptr == nonEmpty));
-      REQUIRE(nonEmpty != nullptr);
-      REQUIRE(nullptr != nonEmpty);
-      REQUIRE(!(nonEmpty < nullptr));
-      REQUIRE(nullptr < nonEmpty);
-      REQUIRE(nonEmpty > nullptr);
-      REQUIRE(!(nullptr > nonEmpty));
-      REQUIRE(!(nonEmpty <= nullptr));
-      REQUIRE(nullptr <= nonEmpty);
-      REQUIRE(nonEmpty >= nullptr);
-      REQUIRE(!(nullptr >= nonEmpty));
     }
   }
 }
