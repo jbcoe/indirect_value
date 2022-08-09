@@ -42,7 +42,7 @@ If `A` and `B` are copyable then the compiler-generated copy constructor of `Com
 each of the components using their copy constructors. (Note: If `A` and `B` are base classes and `a_` and `b_` may store
 derived-type objects then prefer (`polymorphic_value`)[https://github.com/jbcoe/polymorphic_value]).
 
-`indirect_value` propogates `const` unlike `std::unique_ptr` so may be better choice for member data of a composite class.
+`indirect_value` propagates `const` unlike `std::unique_ptr` so may be better choice for member data of a composite class.
 
 ```
 #include <iostream>
