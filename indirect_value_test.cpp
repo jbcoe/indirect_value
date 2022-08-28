@@ -39,8 +39,7 @@ void SelfAssign(T& t, U&& u) {
 
 TEST_CASE("Ensure that indirect_value uses the minimum space requirements",
           "[indirect_value.sizeof]") {
-  STATIC_REQUIRE(sizeof(indirect_value<int>) ==
-                 sizeof(std::unique_ptr<int>));
+  STATIC_REQUIRE(sizeof(indirect_value<int>) == sizeof(std::unique_ptr<int>));
 
   struct CopyDeleteHybrid {  // Same type for copy and delete
     void operator()(int* p) { delete p; }
@@ -48,8 +47,8 @@ TEST_CASE("Ensure that indirect_value uses the minimum space requirements",
   };
 
   STATIC_REQUIRE(
-          sizeof(indirect_value<int, CopyDeleteHybrid, CopyDeleteHybrid>) ==
-          sizeof(std::unique_ptr<int>));
+      sizeof(indirect_value<int, CopyDeleteHybrid, CopyDeleteHybrid>) ==
+      sizeof(std::unique_ptr<int>));
 }
 
 template <typename T>
@@ -98,12 +97,13 @@ TEST_CASE("Default construction for indirect_value", "[constructor.default]") {
                                     // deletes of the default constructor")
   {
     WHEN(
-        "Default constructed then copy assigned from a pointer-initialised")  //("Create a default-constructed indirect_value which is later copy-constructed")
-    {
+        "We create a default constructed indirect_value then copy assign it to "
+        "an in-place-constructed "
+        "indirect_value") {
       indirect_value<int, copy_counter<int>, delete_counter<int>> a{};
       constexpr int b_value = 10;
       indirect_value<int, copy_counter<int>, delete_counter<int>> b{
-          new int(b_value)};
+          std::in_place, b_value};
       REQUIRE(a.operator->() == nullptr);
       REQUIRE(b.operator->() != nullptr);
       REQUIRE(*b == b_value);
@@ -167,7 +167,7 @@ TEST_CASE("Copy construction for indirect_value of a primitive type",
           "[constructor.copy.primitive]") {
   GIVEN("A value-initialised indirect_value value") {
     constexpr int a_value = 5;
-    indirect_value<int> a{new int(a_value)};
+    indirect_value<int> a{std::in_place, a_value};
     REQUIRE(*a == a_value);
 
     WHEN("Taking a copy of the value-initialised indirect_value value") {
@@ -186,7 +186,7 @@ TEST_CASE("Copy assignment for indirect_value of a primitive type",
           "[assignment.copy.primitive]") {
   GIVEN("A value-initialised indirect_value value") {
     constexpr int a_value = 5;
-    indirect_value<int> a{new int(a_value)};
+    indirect_value<int> a{std::in_place, a_value};
     REQUIRE(*a == a_value);
 
     WHEN("Assigning a copy into a default-initalised indirect_value value") {
@@ -234,7 +234,7 @@ TEST_CASE("Move construction for indirect_value of a primitive type",
           "[constructor.move.primitive]") {
   GIVEN("A value-initalised indirect_value value") {
     constexpr int a_value = 5;
-    indirect_value<int> a{new int(a_value)};
+    indirect_value<int> a{std::in_place, a_value};
 
     WHEN("Constucting a new object via moving the orignal value") {
       int const* const location_of_a = a.operator->();
@@ -256,8 +256,8 @@ TEST_CASE("Move assignment for indirect_value of a primitive type",
   GIVEN("A two value-initialised indirect_value values") {
     constexpr int a_value = 5;
     constexpr int b_value = 10;
-    indirect_value<int> a{new int(a_value)};
-    indirect_value<int> b{new int(b_value)};
+    indirect_value<int> a{std::in_place, a_value};
+    indirect_value<int> b{std::in_place, b_value};
 
     WHEN(
         "The contents of the second indirect_value is move assigned to the "
@@ -290,7 +290,7 @@ TEST_CASE("Operator bool for indirect_value", "[operator.bool]") {
           "Then when it is assigned a valid value for operator bool should "
           "return true") {
         constexpr int b_value = 10;
-        a = indirect_value(new int(b_value));
+        a = indirect_value<int>{std::in_place, b_value};
         REQUIRE(a.operator->() != nullptr);
         REQUIRE(*a == b_value);
         REQUIRE(a);
@@ -324,8 +324,8 @@ TEST_CASE("Swap overload for indirect_value", "[swap.primitive]") {
       "base-class optimisation") {
     constexpr int a_value = 5;
     constexpr int b_value = 10;
-    indirect_value<int> a{new int(a_value)};
-    indirect_value<int> b{new int(b_value)};
+    indirect_value<int> a{std::in_place, a_value};
+    indirect_value<int> b{std::in_place, b_value};
 
     WHEN("The contents are swap") {
       swap(a, b);
@@ -345,9 +345,11 @@ TEST_CASE("Swap overload for indirect_value", "[swap.primitive]") {
     constexpr int a_value = 5;
     constexpr int b_value = 10;
     indirect_value<int, decltype(+default_copy_lambda_a),
-      std::default_delete<int>> a{new int(a_value), default_copy_lambda_a};
+                   std::default_delete<int>>
+        a{new int(a_value), default_copy_lambda_a};
     indirect_value<int, decltype(+default_copy_lambda_b),
-      std::default_delete<int>> b{new int(b_value), default_copy_lambda_b};
+                   std::default_delete<int>>
+        b{new int(b_value), default_copy_lambda_b};
 
     THEN(
         "Confirm sized base class is used and its size requirements meet our "
@@ -355,14 +357,14 @@ TEST_CASE("Swap overload for indirect_value", "[swap.primitive]") {
       STATIC_REQUIRE(sizeof(decltype(a)) != sizeof(indirect_value<int>));
       STATIC_REQUIRE(sizeof(decltype(b)) != sizeof(indirect_value<int>));
       STATIC_REQUIRE(sizeof(decltype(a)) ==
-                          (sizeof(indirect_value<int>) +
-                           sizeof(decltype(+default_copy_lambda_a))));
+                     (sizeof(indirect_value<int>) +
+                      sizeof(decltype(+default_copy_lambda_a))));
       STATIC_REQUIRE(sizeof(decltype(b)) ==
-                          (sizeof(indirect_value<int>) +
-                           sizeof(decltype(+default_copy_lambda_b))));
+                     (sizeof(indirect_value<int>) +
+                      sizeof(decltype(+default_copy_lambda_b))));
     }
 
-    WHEN("The contents are swap") {
+    WHEN("The contents are swapped") {
       swap(a, b);
 
       THEN("The contents of the indirect_value should be moved") {
@@ -1008,7 +1010,7 @@ struct CopierWithCallback {
     return new T(t);
   }
 };
-template<>
+template <>
 struct isocpp_p1950::copier_traits<CopierWithCallback> {
   using deleter_type = std::default_delete<int>;
 };
