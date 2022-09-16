@@ -71,7 +71,7 @@ TEST_CASE(
     "Verify optional indirect value support construction by copy construction",
     "[optional<indirect_value>.construction.copy]") {
   GIVEN("A non empty optional indirect value") {
-    std::optional<indirect_value<int>> initial(10);
+    std::optional<indirect_value<int>> initial(std::in_place, 10);
     WHEN("Copy constructing from null-state") {
       std::optional<indirect_value<int>> copy(initial);
       THEN("Resulting copy should also have non null-state") {
@@ -110,7 +110,7 @@ TEST_CASE(
     "Verify optional indirect value support construction by move construction",
     "[optional<indirect_value>.construction.move]") {
   GIVEN("A non empty optional indirect value") {
-    std::optional<indirect_value<int>> initial(10);
+    std::optional<indirect_value<int>> initial(std::in_place, 10);
     WHEN("Move constructing from non null-state") {
       std::optional<indirect_value<int>> copy(std::move(initial));
       THEN("Resulting move should also have non null-state") {
@@ -173,7 +173,7 @@ TEST_CASE(
     "conversion move construction from optional",
     "[optional<indirect_value>.construction.move.convert_from_optional]") {
   GIVEN("A non empty optional indirect value") {
-    std::optional<int> initial(10);
+    std::optional<int> initial(std::in_place, 10);
     WHEN("Copy constructing from null-state") {
       std::optional<indirect_value<int>> copy(std::move(initial));
       THEN("Resulting copy should also have non null-state") {
@@ -231,7 +231,7 @@ TEST_CASE(
     "move construction from other types",
     "[optional<indirect_value>.construction.move.convert_from_other]") {
   GIVEN("A non empty optional indirect value") {
-    short int initial(10);
+    short int initial(std::in_place, 10);
     WHEN("Copy constructing from null-state") {
       std::optional<indirect_value<int>> moved(std::move(initial));
       THEN("Resulting moved to object should also hold the inital value") {
@@ -262,7 +262,7 @@ TEST_CASE(
     "Verify optional indirect value support copy assignment",
     "[optional<indirect_value>.assignment.copy]") {
   GIVEN("A non empty optional indirect value") {
-    std::optional<indirect_value<int>> initial(10);
+    std::optional<indirect_value<int>> initial(std::in_place, 10);
     std::optional<indirect_value<int>> copy;
     WHEN("Copy assigning from valid-state") {
       copy = initial;
@@ -290,7 +290,7 @@ TEST_CASE(
     "Verify optional indirect value support move assignment",
     "[optional<indirect_value>.assignment.move]") {
   GIVEN("A non empty optional indirect value") {
-    std::optional<indirect_value<int>> initial(10);
+    std::optional<indirect_value<int>> initial(std::in_place, 10);
     std::optional<indirect_value<int>> moved;
     WHEN("Move constructing from non null-state") {
       moved = std::move(initial);
@@ -318,7 +318,7 @@ TEST_CASE(
     "move assignment from other types",
     "[optional<indirect_value>.assignment.move.convert_from_other]") {
   GIVEN("A non empty optional indirect value") {
-    short int initial(10);
+    short int initial(std::in_place, 10);
     WHEN("Copy constructing from null-state") {
       std::optional<indirect_value<int>> moved;
       moved = std::move(initial);
@@ -334,7 +334,7 @@ TEST_CASE(
     "conversion copy assignment from optional",
     "[optional<indirect_value>.assignment.copy.convert_from_optional]") {
   GIVEN("A non empty optional indirect value") {
-    std::optional<int> initial(10);
+    std::optional<int> initial(std::in_place, 10);
     WHEN("Copy constructing from null-state") {
       std::optional<indirect_value<int>> copy;
       copy = initial;
@@ -351,7 +351,7 @@ TEST_CASE(
     "conversion move assignment from optional",
     "[optional<indirect_value>.assignment.move.convert_from_optional]") {
   GIVEN("A non empty optional indirect value") {
-    std::optional<int> initial(10);
+    std::optional<int> initial(std::in_place, 10);
     WHEN("Copy constructing from null-state") {
       std::optional<indirect_value<int>> copy;
       copy = std::move(initial);
@@ -413,45 +413,3 @@ TEMPLATE_TEST_CASE("Verify optional indirect value access value_or method",
     }
   }
 }
-/*class InPlaceConstructionOnly
-{
-public:
-    InPlaceConstructionOnly(int value) : mValue(value) {}
-
-    InPlaceConstructionOnly(InPlaceConstructionOnly&&) = delete;
-    InPlaceConstructionOnly& operator=(InPlaceConstructionOnly&&) = delete;
-
-    InPlaceConstructionOnly(InPlaceConstructionOnly const&) = delete;
-    InPlaceConstructionOnly& operator=(InPlaceConstructionOnly const&) = delete;
-
-    int mValue;
-};
-
-TEST_CASE("Demonstrate problems of the interface optional<indirect_value> for
-null state", "[optional<indirect_value>]") {
-
-  GIVEN("Inplace construction requires the inplace tag twice") {
-    std::optional<indirect_value<InPlaceConstructionOnly>>
-inplaceConstructed(std::in_place, std::in_place, 0);
-
-    THEN("Accessing values also require a double derefernece"){
-      (*inplaceConstructed)->mValue=5;
-      REQUIRE((*(*inplaceConstructed)).mValue == 5);
-    }
-  }
-}*/
-/*
-TEST_CASE("Verify supported construction of optional indirect values",
-          "[optional<indirect_value>.construction]") {
-  GIVEN("An a non empty optional indirect value") {
-    std::optional<int> initial(10);
-    WHEN("Copy constructing from null-state") {
-      std::optional<indirect_value<std::uint64_t>> copy(std::move(initial));
-      THEN("Resulting copy should also have null-state") {
-        REQUIRE(initial);
-        REQUIRE(copy);
-      }
-    }
-  }
-}
-*/
