@@ -538,9 +538,8 @@ class std::optional<::isocpp_p1950::indirect_value<T, C, D>> {
       std::is_same<optional, std::remove_cv<std::remove_reference<U>>>>;
 
   template <typename U>
-  using not_in_place =
-      std::negation<std::is_same<std::in_place_t,
-                                 std::remove_cv<std::remove_reference<U>>>>;
+  using not_in_place = std::negation<
+      std::is_same<std::in_place_t, std::remove_cv<std::remove_reference<U>>>>;
 
   template <typename U>
   using constructible_from = std::is_constructible<T, U>;
@@ -680,9 +679,10 @@ class std::optional<::isocpp_p1950::indirect_value<T, C, D>> {
   constexpr optional& operator=(const optional& other) = default;
   constexpr optional& operator=(optional&& other) noexcept = default;
 
-  template <class U = T, enable_if_all_of_t<std::negation<std::is_scalar<U>>>,
-            not_same<U>, not_in_place<U>, std::is_constructible<T, U>,
-            std::is_assignable<T, U> = nullptr>
+  template <class U = T,
+            enable_if_all_of_t<std::negation<std::is_scalar<U>>, not_same<U>,
+                               not_in_place<U>, std::is_constructible<T, U>,
+                               std::is_assignable<T, U>> = nullptr>
   OPTIONAL_CONSTEXPR optional& operator=(U&& value) noexcept(
       std::conjunction_v<std::is_nothrow_constructible<T, U>,
                          std::is_nothrow_assignable<T, U>>) {
