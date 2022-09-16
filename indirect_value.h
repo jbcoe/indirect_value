@@ -143,7 +143,7 @@ class ISOCPP_P1950_EMPTY_BASES indirect_value
 
   T* ptr_ = nullptr;
 
-#if (__cpp_lib_optional > 201606)
+#if (__cpp_lib_optional >= 201606)
   friend class std::optional<::isocpp_p1950::indirect_value<T, C, D>>;
 
   constexpr indirect_value(std::nullptr_t) noexcept : ptr_(nullptr) {}
@@ -513,9 +513,9 @@ struct std::hash<::isocpp_p1950::indirect_value<T, C, D>>
           ::isocpp_p1950::indirect_value<T, C, D>,
           is_default_constructible_v<hash<T>>> {};
 
-#if (__cpp_lib_optional > 201606)
+#if (__cpp_lib_optional >= 201606)
 
-#if (__cpp_lib_optional > 202106)
+#if (__cpp_lib_optional >= 202106)
 #define OPTIONAL_CONSTEXPR constexpr
 #else
 #define OPTIONAL_CONSTEXPR
@@ -566,6 +566,9 @@ class std::optional<::isocpp_p1950::indirect_value<T, C, D>>{
   }
 
  public:
+
+  using value_type = ::isocpp_p1950::indirect_value<T, C, D>;
+  
   constexpr optional() noexcept : mIndirectValue(nullptr) {}
   constexpr optional( std::nullopt_t ) noexcept : mIndirectValue(nullptr) {}
   constexpr optional( const optional& other ) = default;
@@ -745,13 +748,13 @@ class std::optional<::isocpp_p1950::indirect_value<T, C, D>>{
   }
   constexpr auto&& value() && {
     if (has_value())
-      return mIndirectValue;
+      return std::move(mIndirectValue);
     else
       throw_bad_optional_access();
   }
   constexpr const auto&& value() const&& {
     if (has_value())
-      return mIndirectValue;
+      return std::move(mIndirectValue);
     else
       throw_bad_optional_access();
   }
@@ -802,7 +805,7 @@ class std::optional<::isocpp_p1950::indirect_value<T, C, D>>{
   }
 
  private:
-  ::isocpp_p1950::indirect_value<T, C, D> mIndirectValue;
+  value_type mIndirectValue;
 };
 
 #endif // #if (__cpp_lib_optional > 201606)
