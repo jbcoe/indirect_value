@@ -27,6 +27,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <type_traits>
 #include <utility>
 
+#if __has_include(<optional>)
+#include <optional>
+#endif
+
 #if defined(__cpp_lib_three_way_comparison) && defined(__cpp_lib_concepts)
 #include <compare>
 #endif
@@ -138,6 +142,14 @@ class ISOCPP_P1950_EMPTY_BASES indirect_value
   using delete_base = indirect_value_delete_base<D>;
 
   T* ptr_ = nullptr;
+
+#if (__cpp_lib_optional > 201606)
+  friend class std::optional<::isocpp_p1950::indirect_value<T, C, D>>;
+
+  constexpr indirect_value(std::nullptr_t) noexcept : ptr_(nullptr) {}
+
+#endif // #if (__cpp_lib_optional > 201606)
+
 
  public:
   using value_type = T;
@@ -495,12 +507,304 @@ struct _conditionally_enabled_hash<T,
 
 }  // namespace isocpp_p1950
 
-namespace std {
 template <class T, class C, class D>
-struct hash<::isocpp_p1950::indirect_value<T, C, D>>
+struct std::hash<::isocpp_p1950::indirect_value<T, C, D>>
     : ::isocpp_p1950::_conditionally_enabled_hash<
           ::isocpp_p1950::indirect_value<T, C, D>,
           is_default_constructible_v<hash<T>>> {};
-}  // namespace std
+
+#if (__cpp_lib_optional > 201606)
+
+#if (__cpp_lib_optional > 202106)
+#define OPTIONAL_CONSTEXPR constexpr
+#else
+#define OPTIONAL_CONSTEXPR
+#endif // #if (__cpp_lib_optional > 202106)
+
+template <class T, class C, class D>
+class std::optional<::isocpp_p1950::indirect_value<T, C, D>>{
+
+  template<typename... condition>
+	using enable_if_all_of_t = enable_if_t<std::conjunction<condition...>::value, void*>;
+
+  template<typename U>
+	using not_same = std::negation<std::is_same<optional, std::remove_cvref_t<U>>>;
+  
+  template<typename U>
+	using not_in_place = std::negation<std::is_same<std::in_place_t, std::remove_cvref_t<U>>>;
+
+  template<typename U>
+	using constructible_from = std::is_constructible<T, U>;
+
+  template<typename U>
+	using convertible_to = std::is_convertible<U, T>;
+
+  template<typename U>
+  using convertible_from_optional =
+    std::disjunction<
+      std::is_constructible<T, const optional<U>&>,
+      std::is_constructible<T, optional<U>&>,
+      std::is_constructible<T, const optional<U>&&>,
+      std::is_constructible<T, optional<U>&&>,
+      std::is_convertible<const optional<U>&, T>,
+      std::is_convertible<optional<U>&, T>,
+      std::is_convertible<const optional<U>&&, T>,
+      std::is_convertible<optional<U>&&, T>
+    >;
+
+  template<typename U>
+  using assignable_from_optional =
+    std::disjunction<
+      std::is_assignable<T&, const optional<U>&>,
+	    std::is_assignable<T&, optional<U>&>,
+	    std::is_assignable<T&, const optional<U>&&>,
+	    std::is_assignable<T&, optional<U>&&>
+    >;
+
+  [[noreturn]] inline void throw_bad_optional_access() const {
+    throw std::bad_optional_access();
+  }
+
+ public:
+  constexpr optional() noexcept : mIndirectValue(nullptr) {}
+  constexpr optional( std::nullopt_t ) noexcept : mIndirectValue(nullptr) {}
+  constexpr optional( const optional& other ) = default;
+  constexpr optional( optional&& other ) noexcept(noexcept(is_nothrow_constructible_v<T, T>)) = default;
+
+#if (__cpp_conditional_explicit >= 201806)
+
+  // 4
+  template <class U = T, enable_if_all_of_t<not_same<U>, not_in_place<U>,
+                                            constructible_from<U>> = nullptr>
+  OPTIONAL_CONSTEXPR explicit(!std::is_convertible_v<U, T>)
+      optional(const optional<U>& other)
+      : mIndirectValue((!other) ? nullptr
+                                : isocpp_p1950::indirect_value<T, C, D>(
+                                      std::in_place, other.value())) {}
+
+
+  // 5
+  template <class U = T, enable_if_all_of_t<not_same<U>, not_in_place<U>,
+                                            constructible_from<U>> = nullptr>
+  OPTIONAL_CONSTEXPR explicit(!std::is_convertible_v<U, T>)
+      optional(optional<U>&& other)
+      : mIndirectValue((!other) ? nullptr
+                                : isocpp_p1950::indirect_value<T, C, D>(
+                                      std::in_place, std::move(other).value())) {}
+
+  // 8 
+
+  template <
+    class U = T, 
+    enable_if_all_of_t< not_same<U>, not_in_place<U>, constructible_from<U> > = nullptr
+  > 
+  OPTIONAL_CONSTEXPR explicit(!std::is_convertible_v<U, T>) optional(U&& value)
+  : mIndirectValue(in_place, std::forward<U>(value)) {}
+
+#else
+
+  template <
+      class U = T,
+      enable_if_all_of_t<not_same<U>, not_in_place<U>, constructible_from<U>,
+                         std::negation<convertible_to<U>>> = nullptr>
+          OPTIONAL_CONSTEXPR explicit optional(
+              const optional<U>&
+                  other) : mIndirectValue((!other)
+                                              ? nullptr
+                                              : isocpp_p1950::indirect_value<
+                                                    T, C, D>(std::in_place,
+                                                             other.value())) {}
+
+  template <class U = T, enable_if_all_of_t<not_same<U>, not_in_place<U>,
+                                            constructible_from<U>,
+                                            convertible_to<U>> = nullptr>
+  OPTIONAL_CONSTEXPR optional(const optional<U>& other)
+      : mIndirectValue((!other) ? nullptr
+                                : isocpp_p1950::indirect_value<T, C, D>(
+                                      std::in_place, other.value())) {}
+
+  template <
+      class U = T,
+      enable_if_all_of_t<not_same<U>, not_in_place<U>, constructible_from<U>,
+                         std::negation<convertible_to<U>>> = nullptr>
+  OPTIONAL_CONSTEXPR explicit optional(optional<U>&& other)
+      : mIndirectValue((!other)
+                           ? nullptr
+                           : isocpp_p1950::indirect_value<T, C, D>(
+                                 std::in_place, std::move(other).value())) {}
+
+  template <class U = T, enable_if_all_of_t<not_same<U>, not_in_place<U>,
+                                            constructible_from<U>,
+                                            convertible_to<U>> = nullptr>
+  OPTIONAL_CONSTEXPR optional(optional<U>&& other)
+      : mIndirectValue((!other)
+                           ? nullptr
+                           : isocpp_p1950::indirect_value<T, C, D>(
+                                 std::in_place, std::move(other).value())) {}
+
+  template <class U = T, enable_if_all_of_t<not_same<U>, not_in_place<U>,
+                                            constructible_from<U>,
+                                            convertible_to<U>> = nullptr>
+  OPTIONAL_CONSTEXPR optional(U&& value)
+      : mIndirectValue(in_place, std::forward<U>(value)) {}
+
+  template <
+      class U = T,
+      enable_if_all_of_t<not_same<U>, not_in_place<U>, constructible_from<U>,
+                         std::negation<convertible_to<U>>> = nullptr>
+  OPTIONAL_CONSTEXPR explicit optional(U&& value)
+      : mIndirectValue(in_place, std::forward<U>(value)) {}
+#endif // (__cpp_conditional_explicit > 201806)
+
+  template <class... Args, enable_if_t<std::is_constructible<T, Args...>::value, void*> = nullptr>
+  constexpr explicit optional(std::in_place_t, Args&&... args)
+      : mIndirectValue(in_place, std::forward<Args>(args)...) {}
+
+  template <class U, class... Args,
+            enable_if_t<std::is_constructible<T, std::initializer_list<U>,
+                                              Args...>::value,
+                        void*> = nullptr>
+  constexpr explicit optional(std::in_place_t, std::initializer_list<U> ilist,
+                              Args&&... args)
+      : mIndirectValue(in_place, ilist, std::forward<Args>(args)...) {}
+  
+
+  OPTIONAL_CONSTEXPR optional& operator=(std::nullopt_t) noexcept {
+    mIndirectValue = ::isocpp_p1950::indirect_value<T, C, D>(nullptr);
+    return *this;
+  }
+
+  constexpr optional& operator=(const optional& other) = default;
+  constexpr optional& operator=(optional&& other) noexcept = default;
+
+  template <class U = T, enable_if_all_of_t<std::negation<std::is_scalar<U>>>,
+            not_same<U>, not_in_place<U>, std::is_constructible<T, U>,
+            std::is_assignable<T, U>>
+  OPTIONAL_CONSTEXPR optional& operator=(U&& value) noexcept(
+      std::conjunction_v<std::is_nothrow_constructible<T, U>,
+                         std::is_nothrow_assignable<T, U>>) {
+    mIndirectValue = ::isocpp_p1950::indirect_value<T, C, D>(
+        in_place, std::forward<U>(value));
+    return *this;
+  }
+
+ template <class U = T,
+                 enable_if_all_of_t<std::negation<std::is_same<T, U>>,
+            std::is_constructible<T, const U&>, std::is_assignable<T, U>,
+            std::negation<convertible_from_optional<U>>,
+          std::negation<assignable_from_optional<U>>> = nullptr>
+        OPTIONAL_CONSTEXPR optional&
+        operator=(const optional<U>& other) noexcept(
+            std::conjunction_v<std::is_nothrow_constructible<T, U>,
+                               std::is_nothrow_assignable<T, U>>) {
+    if (!other)
+      mIndirectValue = ::isocpp_p1950::indirect_value<T, C, D>(nullptr);
+    else
+      mIndirectValue = ::isocpp_p1950::indirect_value<T, C, D>(std::in_place,
+      other.value());
+    return *this;
+  }
+ 
+  template <class U = T, enable_if_all_of_t<std::negation<std::is_same<T, U>>,
+            std::is_constructible<T, const U&>, std::is_assignable<T, U>,
+            std::negation<convertible_from_optional<U>>,
+            std::negation<assignable_from_optional<U>>>
+  = nullptr >
+        OPTIONAL_CONSTEXPR optional& operator=(optional<U>&& other) noexcept(
+            std::conjunction_v<std::is_nothrow_constructible<T, U>,
+                               std::is_nothrow_assignable<T, U>>) {
+    if (!other)
+      mIndirectValue = ::isocpp_p1950::indirect_value<T, C, D>(nullptr);
+    else
+      mIndirectValue =
+          ::isocpp_p1950::indirect_value<T, C, D>(std::in_place, std::move(other).value());
+    return *this;
+  }
+
+  constexpr const T* operator->() const noexcept { return mIndirectValue.operator->(); }
+  constexpr T* operator->() noexcept { return mIndirectValue.operator->(); }
+  constexpr const T& operator*() const& noexcept { return mIndirectValue.operator*(); }
+  constexpr T& operator*() & noexcept { return mIndirectValue.operator*(); }
+  constexpr const T&& operator*() const&& noexcept { return mIndirectValue.operator*(); }
+  constexpr T&& operator*() && noexcept { return mIndirectValue.operator*(); }
+
+  constexpr explicit operator bool() const noexcept { return mIndirectValue.ptr_ != nullptr; }
+  constexpr bool has_value() const noexcept { return mIndirectValue.ptr_ != nullptr; }
+
+  constexpr auto& value() & {
+    if (has_value())
+      return mIndirectValue;
+    else
+      throw_bad_optional_access();
+  }
+  constexpr const auto& value() const& {
+    if (has_value())
+      return mIndirectValue;
+    else
+      throw_bad_optional_access();
+  }
+  constexpr auto&& value() && {
+    if (has_value())
+      return mIndirectValue;
+    else
+      throw_bad_optional_access();
+  }
+  constexpr const auto&& value() const&& {
+    if (has_value())
+      return mIndirectValue;
+    else
+      throw_bad_optional_access();
+  }
+
+  template <class U>
+  constexpr T value_or(U&& default_value) const& {
+    static_assert(std::is_copy_constructible_v<T>);
+    static_assert(std::is_convertible_v<U&&, T>);
+
+    if (has_value())
+      return operator*();
+    else
+      return static_cast<T>(std::forward<U>(default_value));
+  }
+
+  template <class U>
+  constexpr T value_or(U&& default_value) && {
+    static_assert(std::is_copy_constructible_v<T>);
+    static_assert(std::is_convertible_v<U&&, T>);
+
+    if (has_value())
+      return operator*();
+    else
+      return static_cast<T>(std::forward<U>(default_value));
+  }
+
+  OPTIONAL_CONSTEXPR void reset() noexcept { mIndirectValue.reset(); }
+
+  OPTIONAL_CONSTEXPR void swap(optional& other) { mIndirectValue.swap(); }
+
+  template <class... Args>
+  OPTIONAL_CONSTEXPR T& emplace(Args&&... args) noexcept(
+      std::is_nothrow_constructible_v<T, Args...>) {
+    reset();
+    mIndirectValue = ::isocpp_p1950::indirect_value<T, C, D>(
+        std::forward<Args>(args)...);
+    return mIndirectValue.get();
+  }
+
+  template <class U, class... Args>
+  OPTIONAL_CONSTEXPR T& emplace(std::initializer_list<U> ilist, Args&&... args) noexcept(
+      std::is_nothrow_constructible_v<T, std::initializer_list<U>&,
+                                      Args...>) {
+    reset();
+    mIndirectValue = ::isocpp_p1950::indirect_value<T, C, D>(
+        ilist, std::forward<Args>(args)...);
+    return mIndirectValue.get();
+  }
+
+ private:
+  ::isocpp_p1950::indirect_value<T, C, D> mIndirectValue;
+};
+
+#endif // #if (__cpp_lib_optional > 201606)
 
 #endif  // ISOCPP_P1950_INDIRECT_VALUE_H

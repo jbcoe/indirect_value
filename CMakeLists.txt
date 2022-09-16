@@ -66,6 +66,7 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
                 pimpl.cpp
                 pimpl_test.cpp
                 indirect_value_test.cpp
+                optional_test.cpp
         )
 
         target_link_libraries(indirect_value_test

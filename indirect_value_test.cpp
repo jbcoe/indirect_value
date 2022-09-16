@@ -21,10 +21,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "indirect_value.h"
 
 #include <functional>
+#include <optional>
 #include <string_view>
 
 #define CATCH_CONFIG_MAIN
-#include "catch2/catch.hpp"
+#include <catch2/catch.hpp>
 
 using isocpp_p1950::bad_indirect_value_access;
 using isocpp_p1950::indirect_value;
