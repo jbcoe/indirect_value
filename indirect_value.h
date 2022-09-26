@@ -343,7 +343,7 @@ indirect_value(T*) -> indirect_value<T>;
 
 template <class T, class U = T, class... Ts>
 indirect_value<T> make_indirect_value(Ts&&... ts) {
-  return indirect_value(std::in_place_t, std::forward<Ts>(ts)...);
+  return indirect_value(std::in_place_t{}, std::forward<Ts>(ts)...);
 }
 
 template <class T, class U = T, class A = std::allocator<U>, class... Ts>
