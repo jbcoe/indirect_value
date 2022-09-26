@@ -18,10 +18,10 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ==============================================================================*/
 
-#include "indirect_value.h"
-
 #include <catch2/catch.hpp>
 #include <vector>
+
+#include "indirect_value.h"
 
 using isocpp_p1950::indirect_value;
 
@@ -258,9 +258,8 @@ TEST_CASE("Verify optional indirect value support assignment to a nullopt",
   }
 }
 
-TEST_CASE(
-    "Verify optional indirect value support copy assignment",
-    "[optional<indirect_value>.assignment.copy]") {
+TEST_CASE("Verify optional indirect value support copy assignment",
+          "[optional<indirect_value>.assignment.copy]") {
   GIVEN("A non empty optional indirect value") {
     std::optional<indirect_value<int>> initial(std::in_place, 10);
     std::optional<indirect_value<int>> copy;
@@ -286,9 +285,8 @@ TEST_CASE(
   }
 }
 
-TEST_CASE(
-    "Verify optional indirect value support move assignment",
-    "[optional<indirect_value>.assignment.move]") {
+TEST_CASE("Verify optional indirect value support move assignment",
+          "[optional<indirect_value>.assignment.move]") {
   GIVEN("A non empty optional indirect value") {
     std::optional<indirect_value<int>> initial(std::in_place, 10);
     std::optional<indirect_value<int>> moved;
@@ -363,13 +361,12 @@ TEST_CASE(
   }
 }
 
-TEMPLATE_TEST_CASE(
-    "Verify optional indirect value access value method",
-    "[optional<indirect_value>.value]",
-    (std::optional<indirect_value<int>>&),
-    (std::optional<indirect_value<int>> const&),
-    (std::optional<indirect_value<int>>&&),
-    (std::optional<indirect_value<int>> const&&)) {
+TEMPLATE_TEST_CASE("Verify optional indirect value access value method",
+                   "[optional<indirect_value>.value]",
+                   (std::optional<indirect_value<int>>&),
+                   (std::optional<indirect_value<int>> const&),
+                   (std::optional<indirect_value<int>> &&),
+                   (std::optional<indirect_value<int>> const&&)) {
   GIVEN("A non empty optional indirect value") {
     std::optional<indirect_value<int>> initial(std::in_place, 10);
     WHEN("Accessing the value") {
@@ -398,18 +395,14 @@ TEMPLATE_TEST_CASE("Verify optional indirect value access value_or method",
     std::optional<indirect_value<int>> initial(std::in_place, 10);
     WHEN("Accessing the value or a default") {
       auto const value = static_cast<TestType>(initial).value_or(500);
-      THEN("expect the value to be returned") {
-        REQUIRE(value == 10);
-      }
+      THEN("expect the value to be returned") { REQUIRE(value == 10); }
     }
   }
   GIVEN("An empty optional indirect value") {
     std::optional<indirect_value<int>> initial;
     WHEN("Accessing the value or a default") {
       auto const value = static_cast<TestType>(initial).value_or(500);
-      THEN("expect the value to be returned"){
-          REQUIRE(value == 500);
-      }
+      THEN("expect the value to be returned") { REQUIRE(value == 500); }
     }
   }
 }
