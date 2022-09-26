@@ -745,13 +745,13 @@ class std::optional<::isocpp_p1950::indirect_value<T, C, D>>{
   }
   constexpr auto&& value() && {
     if (has_value())
-      return mIndirectValue;
+      return std::move(mIndirectValue);
     else
       throw_bad_optional_access();
   }
   constexpr const auto&& value() const&& {
     if (has_value())
-      return mIndirectValue;
+      return std::move(mIndirectValue);
     else
       throw_bad_optional_access();
   }

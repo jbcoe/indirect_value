@@ -231,7 +231,7 @@ TEST_CASE(
     "move construction from other types",
     "[optional<indirect_value>.construction.move.convert_from_other]") {
   GIVEN("A non empty optional indirect value") {
-    short int initial(std::in_place, 10);
+    short int initial(10);
     WHEN("Copy constructing from null-state") {
       std::optional<indirect_value<int>> moved(std::move(initial));
       THEN("Resulting moved to object should also hold the inital value") {
@@ -318,7 +318,7 @@ TEST_CASE(
     "move assignment from other types",
     "[optional<indirect_value>.assignment.move.convert_from_other]") {
   GIVEN("A non empty optional indirect value") {
-    short int initial(std::in_place, 10);
+    short int initial(10);
     WHEN("Copy constructing from null-state") {
       std::optional<indirect_value<int>> moved;
       moved = std::move(initial);
@@ -367,13 +367,13 @@ TEMPLATE_TEST_CASE(
     "Verify optional indirect value access value method",
     "[optional<indirect_value>.value]",
     (std::optional<indirect_value<int>>&),
-    (std::optional<indirect_value<int>>& const),
+    (std::optional<indirect_value<int>> const&),
     (std::optional<indirect_value<int>>&&),
-    (std::optional<indirect_value<int>>&& const)) {
+    (std::optional<indirect_value<int>> const&&)) {
   GIVEN("A non empty optional indirect value") {
     std::optional<indirect_value<int>> initial(std::in_place, 10);
     WHEN("Accessing the value") {
-      auto& value = static_cast<TestType>(initial).value();
+      auto const& value = static_cast<TestType>(initial).value();
       THEN("Resulting copy should also have non null-state") {
         REQUIRE(*value == 10);
       }
@@ -392,7 +392,7 @@ TEMPLATE_TEST_CASE(
 
 TEMPLATE_TEST_CASE("Verify optional indirect value access value_or method",
                    "[optional<indirect_value>.value_or]",
-                   (std::optional<indirect_value<int>>& const),
+                   (std::optional<indirect_value<int>> const&),
                    (std::optional<indirect_value<int>> &&)) {
   GIVEN("A non empty optional indirect value") {
     std::optional<indirect_value<int>> initial(std::in_place, 10);
