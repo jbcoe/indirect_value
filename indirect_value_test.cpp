@@ -22,6 +22,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <functional>
 #include <string_view>
+#include <type_traits>
 
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
@@ -1121,20 +1122,45 @@ struct CompositeType {
 size_t CompositeType::object_count = 0;
 
 TEST_CASE("Allocator used to construct with make_indirect_value") {
-  unsigned allocs = 0;
-  unsigned deallocs = 0;
+  
+  GIVEN("an alloator which tracks allocations") {
+    unsigned allocs = 0;
+    unsigned deallocs = 0;
 
-  tracking_allocator<int> alloc(&allocs, &deallocs);
+    tracking_allocator<int> alloc(&allocs, &deallocs);
+    WHEN("Constructing a type from the allocator")
+    {
+      unsigned const value = 99;
+      auto p = make_indirect_value<CompositeType>(
+          std::allocator_arg_t{}, alloc, value);
+      THEN("Expect the allocation to be tracked")
+      {
+        CHECK(allocs == 1);
+        CHECK(deallocs == 0);
+      }
+      AND_THEN("Expect the deallocation to be tracked")
+      {
+        p.~indirect_value();
+        CHECK(allocs == 1);
+        CHECK(deallocs == 1);
+      }
+    }
+    WHEN("Constructing a type that throws on construction from the allocator")
+    {
+      struct ThrowOnConstruction
+      {
+        ThrowOnConstruction() { throw "I throw in my default constructor";}
+      };
 
-  {
-    unsigned const value = 99;
-    auto p = make_indirect_value<CompositeType>(
-        std::allocator_arg_t{}, alloc, value);
-    CHECK(allocs == 1);
-    CHECK(deallocs == 0);
+      CHECK_THROWS(make_indirect_value<ThrowOnConstruction>(
+                       std::allocator_arg_t{}, alloc));
+      AND_THEN("Expect allocation and subsequent deallocation to be tracked after the throw")
+      {
+        CHECK(allocs == 1);
+        CHECK(deallocs == 1);
+      }
+    }    
   }
-  CHECK(allocs == 1);
-  CHECK(deallocs == 1);
 }
 
 TEST_CASE("Relational operators between two indirect_values", "[TODO]") {
