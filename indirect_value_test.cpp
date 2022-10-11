@@ -1089,7 +1089,7 @@ struct tracking_allocator {
 
   constexpr T* allocate(std::size_t n) {
     ++*alloc_counter;
-    std::allocator<T> default_allocator{};
+    std::allocator<T> default_allocator{}; // LCOV_EXCL_LINE
     return default_allocator.allocate(n);
   }
   constexpr void deallocate(T* p, std::size_t n) {
