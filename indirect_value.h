@@ -86,6 +86,55 @@ constexpr bool is_complete_v = false;
 template <typename T>
 constexpr bool is_complete_v<T, std::enable_if_t<sizeof(T)>> = true;
 
+namespace detail
+{
+
+template <typename T, typename A, typename... Args>
+T* allocate_object(A& a, Args&&... args) {
+  using t_allocator =
+      typename std::allocator_traits<A>::template rebind_alloc<T>;
+  using t_traits = std::allocator_traits<t_allocator>;
+  t_allocator t_alloc(a);
+  T* mem = t_traits::allocate(t_alloc, 1);
+  try {
+    t_traits::construct(t_alloc, mem, std::forward<Args>(args)...);
+    return mem;
+  } catch (...) {
+    t_traits::deallocate(t_alloc, mem, 1);
+    throw;
+  }
+}
+
+template <typename T, typename A>
+void deallocate_object(A& a, T* p) {
+  using t_allocator =
+      typename std::allocator_traits<A>::template rebind_alloc<T>;
+  using t_traits = std::allocator_traits<t_allocator>;
+  t_allocator t_alloc(a);
+  t_traits::destroy(t_alloc, p);
+  t_traits::deallocate(t_alloc, p, 1);
+};
+
+template <class T, class A>
+struct allocator_delete : A  {
+    allocator_delete(A& a) : A(a) {} 
+    void operator()(T* ptr) const noexcept { 
+        static_assert(0 < sizeof(T), "can't delete an incomplete type");
+        detail::deallocate_object(*this, ptr);
+    }
+};
+
+template <class T, class A>
+struct allocator_copy : A {
+  allocator_copy(A& a) : A(a) {} 
+  using deleter_type = allocator_delete<T, A>;
+  T* operator()(const T& t) const { 
+    return detail::allocate_object<T>(*this, t);
+  }
+};
+
+}
+
 template <class C,
           bool CanBeEmptyBaseClass = std::is_empty_v<C> && !std::is_final_v<C>>
 class indirect_value_copy_base {
@@ -291,6 +340,23 @@ class ISOCPP_P1950_EMPTY_BASES indirect_value
 
 template <class T>
 indirect_value(T*) -> indirect_value<T>;
+
+template <class T, class U = T, class... Ts>
+indirect_value<T> make_indirect_value(Ts&&... ts) {
+  return indirect_value(std::in_place_t{}, std::forward<Ts>(ts)...);
+}
+
+template <class T, class U = T, class A = std::allocator<U>, class... Ts>
+auto make_indirect_value(std::allocator_arg_t, A& a, Ts&&... ts) {
+  auto* u = detail::allocate_object<U>(a, std::forward<Ts>(ts)...);
+  try {
+    return indirect_value<T, detail::allocator_copy<T, A>, detail::allocator_delete<T, A>>(u, {a}, {a});
+  } catch (...) {
+    detail::deallocate_object(a, u);
+    throw;
+  }
+}
+
 
 // Relational operators between two indirect_values.
 template <class T1, class C1, class D1, class T2, class C2, class D2>

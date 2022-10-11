@@ -22,12 +22,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <functional>
 #include <string_view>
+#include <type_traits>
 
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
 
 using isocpp_p1950::bad_indirect_value_access;
 using isocpp_p1950::indirect_value;
+using isocpp_p1950::make_indirect_value;
 
 // Helper function to write unit tests for self assign.
 // Compiler emit the warnings -Wself-assign-overload and -Wself-move
@@ -1061,6 +1063,103 @@ TEST_CASE("Working with an incomplete type", "[completeness.of.t]") {
     (void)iv.has_value();
     swap(iv, iv);
     iv.swap(iv);
+  }
+}
+
+namespace {
+template <typename T>
+struct tracking_allocator {
+  unsigned* alloc_counter;
+  unsigned* dealloc_counter;
+
+  explicit tracking_allocator(unsigned* a, unsigned* d) noexcept
+      : alloc_counter(a), dealloc_counter(d) {}
+
+  template <typename U>
+  tracking_allocator(const tracking_allocator<U>& other)
+      : alloc_counter(other.alloc_counter),
+        dealloc_counter(other.dealloc_counter) {}
+
+  using value_type = T;
+
+  template <typename Other>
+  struct rebind {
+    using other = tracking_allocator<Other>;
+  };
+
+  constexpr T* allocate(std::size_t n) {
+    ++*alloc_counter;
+    std::allocator<T> default_allocator{}; // LCOV_EXCL_LINE
+    return default_allocator.allocate(n);
+  }
+  constexpr void deallocate(T* p, std::size_t n) {
+    ++*dealloc_counter;
+    std::allocator<T> default_allocator{};
+    default_allocator.deallocate(p, n);
+  }
+};
+}  // namespace
+
+struct CompositeType {
+  int value_ = 0;
+
+  CompositeType() { ++object_count; }
+
+  CompositeType(const CompositeType& d) {
+    value_ = d.value_;
+    ++object_count;
+  }
+
+  CompositeType(int v) : value_(v) { ++object_count; }
+
+  ~CompositeType() { --object_count; }
+
+  int value() const { return value_; }
+  void set_value(int i) { value_ = i; }
+
+  static size_t object_count;
+};
+size_t CompositeType::object_count = 0;
+
+TEST_CASE("Allocator used to construct with make_indirect_value") {
+  
+  GIVEN("an alloator which tracks allocations") {
+    unsigned allocs = 0;
+    unsigned deallocs = 0;
+
+    tracking_allocator<int> alloc(&allocs, &deallocs);
+    WHEN("Constructing a type from the allocator")
+    {
+      unsigned const value = 99;
+      auto p = make_indirect_value<CompositeType>(
+          std::allocator_arg_t{}, alloc, value);
+      THEN("Expect the allocation to be tracked")
+      {
+        CHECK(allocs == 1);
+        CHECK(deallocs == 0);
+      }
+      AND_THEN("Expect the deallocation to be tracked")
+      {
+        p.~indirect_value();
+        CHECK(allocs == 1);
+        CHECK(deallocs == 1);
+      }
+    }
+    WHEN("Constructing a type that throws on construction from the allocator")
+    {
+      struct ThrowOnConstruction
+      {
+        ThrowOnConstruction() { throw "I throw in my default constructor";}
+      };
+
+      CHECK_THROWS(make_indirect_value<ThrowOnConstruction>(
+                       std::allocator_arg_t{}, alloc));
+      AND_THEN("Expect allocation and subsequent deallocation to be tracked after the throw")
+      {
+        CHECK(allocs == 1);
+        CHECK(deallocs == 1);
+      }
+    }    
   }
 }
 
