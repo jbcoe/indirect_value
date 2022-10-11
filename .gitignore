@@ -1,6 +1,8 @@
+.vs/
 _deps
 _build
-build/
+build*/
 .idea/
 .vscode/
 bazel-*
+out/
