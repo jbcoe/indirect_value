@@ -39,7 +39,7 @@ void SelfAssign(T& t, U&& u) {
 
 TEST_CASE("Ensure that indirect_value uses the minimum space requirements",
           "[indirect_value.sizeof]") {
-  STATIC_REQUIRE(sizeof(indirect_value<int>) == sizeof(std::unique_ptr<int>));
+  STATIC_REQUIRE(sizeof(indirect_value<int>) == sizeof(int*));
 
   struct CopyDeleteHybrid {  // Same type for copy and delete
     void operator()(int* p) { delete p; }
@@ -48,7 +48,7 @@ TEST_CASE("Ensure that indirect_value uses the minimum space requirements",
 
   STATIC_REQUIRE(
       sizeof(indirect_value<int, CopyDeleteHybrid, CopyDeleteHybrid>) ==
-      sizeof(std::unique_ptr<int>));
+      sizeof(int*));
 }
 
 template <typename T>
