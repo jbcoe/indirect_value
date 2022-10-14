@@ -30,6 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using isocpp_p1950::bad_indirect_value_access;
 using isocpp_p1950::indirect_value;
 using isocpp_p1950::make_indirect_value;
+using isocpp_p1950::allocate_indirect_value;
 
 // Helper function to write unit tests for self assign.
 // Compiler emit the warnings -Wself-assign-overload and -Wself-move
@@ -1123,7 +1124,7 @@ struct CompositeType {
 };
 size_t CompositeType::object_count = 0;
 
-TEST_CASE("Allocator used to construct with make_indirect_value") {
+TEST_CASE("Allocator used to construct with allocate_indirect_value ") {
   
   GIVEN("an alloator which tracks allocations") {
     unsigned allocs = 0;
@@ -1133,7 +1134,7 @@ TEST_CASE("Allocator used to construct with make_indirect_value") {
     WHEN("Constructing a type from the allocator")
     {
       unsigned const value = 99;
-      auto p = make_indirect_value<CompositeType>(
+      auto p = allocate_indirect_value<CompositeType>(
           std::allocator_arg_t{}, alloc, value);
       THEN("Expect the allocation to be tracked")
       {
@@ -1154,7 +1155,7 @@ TEST_CASE("Allocator used to construct with make_indirect_value") {
         ThrowOnConstruction() { throw "I throw in my default constructor";}
       };
 
-      CHECK_THROWS(make_indirect_value<ThrowOnConstruction>(
+      CHECK_THROWS(allocate_indirect_value<ThrowOnConstruction>(
                        std::allocator_arg_t{}, alloc));
       AND_THEN("Expect allocation and subsequent deallocation to be tracked after the throw")
       {

@@ -347,7 +347,7 @@ indirect_value<T> make_indirect_value(Ts&&... ts) {
 }
 
 template <class T, class U = T, class A = std::allocator<U>, class... Ts>
-auto make_indirect_value(std::allocator_arg_t, A& a, Ts&&... ts) {
+auto allocate_indirect_value(std::allocator_arg_t, A& a, Ts&&... ts) {
   auto* u = detail::allocate_object<U>(a, std::forward<Ts>(ts)...);
   try {
     return indirect_value<T, detail::allocator_copy<T, A>, detail::allocator_delete<T, A>>(u, {a}, {a});

@@ -4,10 +4,10 @@ if (CURL)
         COMMAND
             pwd
         COMMAND
-            ${CURL} -k https://api.csswg.org/bikeshed/ -F file=@${CMAKE_CURRENT_SOURCE_DIR}/p1950.md -F force=1 > P1950r1.html
+            ${CURL} -k https://api.csswg.org/bikeshed/ -F file=@${CMAKE_CURRENT_SOURCE_DIR}/p1950.md -F force=1 > P1950r2.html
         BYPRODUCTS
-            P1950r1.html
+            P1950r2.html
         COMMENT
-            "Generating ISO Paper P1950 revision 1"
+            "Generating ISO Paper P1950 revision 2"
     )
 endif ()
