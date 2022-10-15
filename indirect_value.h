@@ -47,6 +47,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define ISOCPP_P1950_EMPTY_BASES
 #endif
 
+#if (__cpp_constexpr >= 202002)
+    #define CONSTEXPR_CXX20 constexpr
+#else
+    #define CONSTEXPR_CXX20
+#endif
+
 namespace isocpp_p1950 {
 
 template <class T>
@@ -251,7 +257,7 @@ class ISOCPP_P1950_EMPTY_BASES indirect_value
     return *this;
   }
 
-  constexpr ~indirect_value() { reset(); }
+  CONSTEXPR_CXX20 ~indirect_value() { reset(); }
 
   constexpr T* operator->() noexcept { return ptr_; }
 
