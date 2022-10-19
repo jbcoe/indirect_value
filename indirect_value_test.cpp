@@ -1182,7 +1182,7 @@ TEST_CASE("Relational operators between two indirect_values", "[TODO]") {
   }
 
   GIVEN("One non-empty and one empty indirect_value") {
-    const indirect_value<int> nonEmpty(std::in_place, 0);
+    const indirect_value<int> nonEmpty = make_indirect_value<int>(0);
     const indirect_value<int> empty;
 
     THEN("The values should be unequal") {
@@ -1196,8 +1196,8 @@ TEST_CASE("Relational operators between two indirect_values", "[TODO]") {
   }
 
   GIVEN("Two non-empty indirect_value values with equal values") {
-    const indirect_value<int> a(std::in_place, 0);
-    const indirect_value<int> b(std::in_place, 0);
+    const indirect_value<int> a = make_indirect_value<int>(0);
+    const indirect_value<int> b = make_indirect_value<int>(0);
     THEN("The values should be equal") {
       REQUIRE(a == b);
       REQUIRE(!(a != b));
@@ -1209,8 +1209,8 @@ TEST_CASE("Relational operators between two indirect_values", "[TODO]") {
   }
 
   GIVEN("Two non-empty indirect_value values with different values") {
-    const indirect_value<int> a(std::in_place, 0);
-    const indirect_value<int> b(std::in_place, 1);
+    const indirect_value<int> a = make_indirect_value<int>(0);
+    const indirect_value<int> b = make_indirect_value<int>(1);
     THEN("a should be less than b") {
       REQUIRE(!(a == b));
       REQUIRE(a != b);
