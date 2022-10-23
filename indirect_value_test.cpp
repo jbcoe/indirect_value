@@ -449,71 +449,30 @@ TEST_CASE("Test properties of bad_indirect_value_access", "[TODO]") {
   STATIC_REQUIRE(noexcept(ex.what()));
 }
 
-TEST_CASE("Calling value on empty indirect_value will throw", "[TODO]") {
+TEMPLATE_TEST_CASE("Calling value on empty indirect_value will throw",
+                   "[indirect_value.access]",
+                   indirect_value<int>&, const indirect_value<int>&,
+                   indirect_value<int>&&, const indirect_value<int>&&) {
   GIVEN("An empty indirect_value") {
-    indirect_value<int> iv;
+    std::remove_reference_t<TestType> iv;
     THEN("Calling value will throw") {
       REQUIRE(!iv.has_value());
-      REQUIRE_THROWS_AS(iv.value(), bad_indirect_value_access);
-    }
-  }
-
-  GIVEN("An empty const indirect_value") {
-    const indirect_value<int> iv;
-    THEN("Calling value will throw") {
-      REQUIRE(!iv.has_value());
-      REQUIRE_THROWS_AS(iv.value(), bad_indirect_value_access);
-    }
-  }
-
-  GIVEN("An empty indirect_value rvalue") {
-    indirect_value<int> iv;
-    THEN("Calling value will throw") {
-      REQUIRE(!iv.has_value());
-      REQUIRE_THROWS_AS(std::move(iv).value(), bad_indirect_value_access);
-    }
-  }
-
-  GIVEN("An empty const indirect_value rvalue") {
-    const indirect_value<int> iv;
-    THEN("Calling value will throw") {
-      REQUIRE(!iv.has_value());
-      REQUIRE_THROWS_AS(std::move(iv).value(), bad_indirect_value_access);
+      REQUIRE_THROWS_AS(std::forward<TestType>(iv).value(),
+                        bad_indirect_value_access);
     }
   }
 }
 
-TEST_CASE("Calling value on an enganged indirect_value will not throw",
-          "[TODO]") {
+TEMPLATE_TEST_CASE(
+    "Calling value on an enganged indirect_value will not throw",
+    "[indirect_value.access.no_exceptions]",
+    indirect_value<int>&, const indirect_value<int>&, indirect_value<int>&&,
+    const indirect_value<int>&&) {
   GIVEN("An enganged indirect_value") {
-    indirect_value<int> iv(std::in_place, 44);
+    std::remove_reference_t<TestType> iv(std::in_place, 44);
     THEN("Calling value will not throw") {
-      REQUIRE(iv.has_value());
-      REQUIRE(iv.value() == 44);
-    }
-  }
-
-  GIVEN("An enganged const indirect_value") {
-    const indirect_value<int> iv(std::in_place, 44);
-    THEN("Calling value will not throw") {
-      REQUIRE(iv.has_value());
-      REQUIRE(iv.value() == 44);
-    }
-  }
-
-  GIVEN("An enganged indirect_value rvalue") {
-    indirect_value<int> iv(std::in_place, 44);
-    THEN("Calling value will not throw") {
-      REQUIRE(iv.has_value());
-      REQUIRE(std::move(iv).value() == 44);
-    }
-  }
-
-  GIVEN("An enganged const indirect_value rvalue") {
-    const indirect_value<int> iv(std::in_place, 44);
-    THEN("Calling value will not throw") {
-      REQUIRE(iv.has_value());
-      REQUIRE(std::move(iv).value() == 44);
+      REQUIRE(std::forward<TestType>(iv).has_value());
+      REQUIRE(std::forward<TestType>(iv).value() == 44);
     }
   }
 }
