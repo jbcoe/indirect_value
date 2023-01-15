@@ -96,7 +96,7 @@ namespace detail
 {
 
 template <typename T, typename A, typename... Args>
-constexpr T* allocate_object(A& a, Args&&... args) {
+ISOCPP_P1950_CONSTEXPR_CXX20 T* allocate_object(A& a, Args&&... args) {
   using t_allocator =
       typename std::allocator_traits<A>::template rebind_alloc<T>;
   using t_traits = std::allocator_traits<t_allocator>;
@@ -355,7 +355,7 @@ constexpr indirect_value<T> make_indirect_value(Ts&&... ts) {
 }
 
 template <class T, class A = std::allocator<T>, class... Ts>
-constexpr auto allocate_indirect_value(std::allocator_arg_t, A& a, Ts&&... ts) {
+ISOCPP_P1950_CONSTEXPR_CXX20 auto allocate_indirect_value(std::allocator_arg_t, A& a, Ts&&... ts) {
   auto* u = detail::allocate_object<T>(a, std::forward<Ts>(ts)...);
   try {
     return indirect_value<T, detail::allocator_copy<T, A>, detail::allocator_delete<T, A>>(u, {a}, {a});
