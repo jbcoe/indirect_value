@@ -355,7 +355,7 @@ constexpr indirect_value<T> make_indirect_value(Ts&&... ts) {
 }
 
 template <class T, class A = std::allocator<T>, class... Ts>
-constexpr auto allocate_indirect_value(std::allocator_arg_t, A& a, Ts&&... ts) {
+ISOCPP_P1950_CONSTEXPR_CXX20 auto allocate_indirect_value(std::allocator_arg_t, A& a, Ts&&... ts) {
   auto* u = detail::allocate_object<T>(a, std::forward<Ts>(ts)...);
   try {
     return indirect_value<T, detail::allocator_copy<T, A>, detail::allocator_delete<T, A>>(u, {a}, {a});
