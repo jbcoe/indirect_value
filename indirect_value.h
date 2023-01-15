@@ -96,7 +96,7 @@ namespace detail
 {
 
 template <typename T, typename A, typename... Args>
-constexpr T* allocate_object(A& a, Args&&... args) {
+ISOCPP_P1950_CONSTEXPR_CXX20 T* allocate_object(A& a, Args&&... args) {
   using t_allocator =
       typename std::allocator_traits<A>::template rebind_alloc<T>;
   using t_traits = std::allocator_traits<t_allocator>;
