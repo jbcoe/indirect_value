@@ -24,7 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 TEST_CASE(
     "Basic life time operations of a pimpl now work for free via "
-    "indirect_value via the rule of zero",
+    "indirect via the rule of zero",
     "[example_pimpl.life_cycle]") {
   GIVEN("An instance of the pimpl type") {
     const std::string nameA = "First Pimpl";

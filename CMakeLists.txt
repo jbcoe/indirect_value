@@ -5,9 +5,9 @@ if(NOT DEFINED PROJECT_NAME)
     set(CPP_INDIRECT_IS_SUBPROJECT ON)
 endif()
 
-set(CPP_INDIRECT_VALUE_VERSION 0.0.1)
+set(CPP_INDIRECT_VERSION 0.0.1)
 
-project(indirect_value LANGUAGES CXX VERSION ${CPP_INDIRECT_VALUE_VERSION})
+project(indirect LANGUAGES CXX VERSION ${CPP_INDIRECT_VERSION})
 
 include(CTest)
 include(FetchContent)
@@ -22,27 +22,27 @@ option(ENABLE_SANITIZERS "Enable Address Sanitizer and Undefined Behaviour Sanit
 
 add_subdirectory(documentation)
 
-add_library(indirect_value INTERFACE)
-target_include_directories(indirect_value
+add_library(indirect INTERFACE)
+target_include_directories(indirect
     INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-target_sources(indirect_value
+target_sources(indirect
     INTERFACE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/indirect_value.h>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/indirect.h>
         # Only include natvis files in Visual Studio
-        $<BUILD_INTERFACE:$<$<CXX_COMPILER_ID:MSVC>:${CMAKE_CURRENT_SOURCE_DIR}/indirect_value.natvis>>
-        $<INSTALL_INTERFACE:$<$<BOOL:${ENABLE_INCLUDE_NATVIS}>:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}/indirect_value.natvis>>
+        $<BUILD_INTERFACE:$<$<CXX_COMPILER_ID:MSVC>:${CMAKE_CURRENT_SOURCE_DIR}/indirect.natvis>>
+        $<INSTALL_INTERFACE:$<$<BOOL:${ENABLE_INCLUDE_NATVIS}>:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}/indirect.natvis>>
 )
 
-target_compile_features(indirect_value
+target_compile_features(indirect
     INTERFACE
         cxx_std_20
 )
 
-add_library(indirect_value::indirect_value ALIAS indirect_value)
+add_library(indirect::indirect ALIAS indirect)
 
 if (${CPP_INDIRECT_IS_SUBPROJECT})
 
@@ -59,22 +59,22 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
             add_subdirectory(${catch2_SOURCE_DIR} ${catch2_BINARY_DIR})
         endif()
 
-        add_executable(indirect_value_test "")
-        target_sources(indirect_value_test
+        add_executable(indirect_test "")
+        target_sources(indirect_test
             PRIVATE
                 pimpl.h
                 pimpl.cpp
                 pimpl_test.cpp
-                indirect_value_test.cpp
+                indirect_test.cpp
         )
 
-        target_link_libraries(indirect_value_test
+        target_link_libraries(indirect_test
             PRIVATE
-                indirect_value::indirect_value
+                indirect::indirect
                 Catch2::Catch2
         )
 
-        target_compile_options(indirect_value_test
+        target_compile_options(indirect_test
             PRIVATE
                 $<$<CXX_COMPILER_ID:MSVC>:/EHsc>
                 $<$<CXX_COMPILER_ID:MSVC>:/W4>
@@ -82,7 +82,7 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
                 $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:Clang>>:-Werror;-Wall;-Wno-self-assign-overloaded;-Wno-unknown-warning-option>
         )
 
-        set_target_properties(indirect_value_test PROPERTIES
+        set_target_properties(indirect_test PROPERTIES
             CXX_STANDARD 17
             CXX_STANDARD_REQUIRED YES
             CXX_EXTENSIONS NO
@@ -102,7 +102,7 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
                     INTERFACE_COMPILE_OPTIONS "${SANITIZER_FLAGS_ASAN}"
                     INTERFACE_LINK_OPTIONS "${SANITIZER_FLAGS_ASAN}"
                 )
-                target_link_libraries(indirect_value_test
+                target_link_libraries(indirect_test
                     PRIVATE
                         asan
                 )
@@ -114,7 +114,7 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
                     INTERFACE_COMPILE_OPTIONS "${SANITIZER_FLAGS_UBSAN}"
                     INTERFACE_LINK_OPTIONS "${SANITIZER_FLAGS_UBSAN}"
                 )
-                target_link_libraries(indirect_value_test
+                target_link_libraries(indirect_test
                     PRIVATE
                         ubsan
                 )
@@ -123,13 +123,13 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
 
         enable_testing()
         add_test(
-            NAME indirect_value_test
-            COMMAND indirect_value_test
+            NAME indirect_test
+            COMMAND indirect_test
             WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
         list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/contrib)
         include(Catch)
-        catch_discover_tests(indirect_value_test)
+        catch_discover_tests(indirect_test)
 
         if (ENABLE_CODE_COVERAGE)
             FetchContent_Declare(
@@ -145,7 +145,7 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
 
             set(ENABLE_COVERAGE ON CACHE BOOL "Enable coverage build." FORCE)
             find_package(codecov)
-            add_coverage(indirect_value_test)
+            add_coverage(indirect_test)
             list(APPEND LCOV_REMOVE_PATTERNS "'/usr/*'")
             coverage_evaluate()
         endif()
@@ -153,8 +153,8 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
 
     install(
         FILES
-            "${CMAKE_CURRENT_SOURCE_DIR}/indirect_value.h"
-            "${CMAKE_CURRENT_SOURCE_DIR}/indirect_value.natvis"
+            "${CMAKE_CURRENT_SOURCE_DIR}/indirect.h"
+            "${CMAKE_CURRENT_SOURCE_DIR}/indirect.natvis"
         DESTINATION
             ${CMAKE_INSTALL_INCLUDEDIR}
     )
@@ -163,42 +163,42 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
         FILES
             "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt"
         DESTINATION
-            "${CMAKE_INSTALL_DATAROOTDIR}/licenses/indirect_value"
+            "${CMAKE_INSTALL_DATAROOTDIR}/licenses/indirect"
     )
 
     install(
-        TARGETS indirect_value
-        EXPORT indirect_value-export-set
+        TARGETS indirect
+        EXPORT indirect-export-set
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
 
     install(
-        EXPORT indirect_value-export-set
-        NAMESPACE indirect_value::
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/indirect_value"
+        EXPORT indirect-export-set
+        NAMESPACE indirect::
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/indirect"
     )
 
     configure_package_config_file(
-        ${CMAKE_CURRENT_LIST_DIR}/indirect_value-config.cmake.in
-        ${CMAKE_CURRENT_BINARY_DIR}/indirect_value-config.cmake
+        ${CMAKE_CURRENT_LIST_DIR}/indirect-config.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/indirect-config.cmake
         INSTALL_DESTINATION
-            "${CMAKE_INSTALL_LIBDIR}/cmake/indirect_value"
+            "${CMAKE_INSTALL_LIBDIR}/cmake/indirect"
     )
 
     write_basic_package_version_file(
-        ${CMAKE_CURRENT_BINARY_DIR}/indirect_value-version.cmake
-        VERSION ${CPP_INDIRECT_VALUE_VERSION}
+        ${CMAKE_CURRENT_BINARY_DIR}/indirect-version.cmake
+        VERSION ${CPP_INDIRECT_VERSION}
         COMPATIBILITY SameMajorVersion
         ARCH_INDEPENDENT
     )
 
     install(
         FILES
-            ${CMAKE_CURRENT_BINARY_DIR}/indirect_value-config.cmake
-            ${CMAKE_CURRENT_BINARY_DIR}/indirect_value-version.cmake
+            ${CMAKE_CURRENT_BINARY_DIR}/indirect-config.cmake
+            ${CMAKE_CURRENT_BINARY_DIR}/indirect-version.cmake
         DESTINATION
-            "${CMAKE_INSTALL_LIBDIR}/cmake/indirect_value"
+            "${CMAKE_INSTALL_LIBDIR}/cmake/indirect"
     )
 endif()

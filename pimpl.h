@@ -21,7 +21,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef INDIRECT_VALUE_EXAMPLE_PIMPL_H
 #define INDIRECT_VALUE_EXAMPLE_PIMPL_H
 
-#include "indirect_value.h"
+#include "indirect.h"
 
 class example_pimpl {
  public:
@@ -40,7 +40,7 @@ class example_pimpl {
   void set_name(char const* const name);
 
  private:
-  isocpp_p1950::indirect_value<class pimpl> pimpl_;
+  isocpp_p1950::indirect<class pimpl> pimpl_;
 };
 
 #endif  // INDIRECT_VALUE_EXAMPLE_PIMPL_H

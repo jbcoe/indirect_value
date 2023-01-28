@@ -18,7 +18,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ==============================================================================*/
 
-#include "indirect_value.h"
+#include "indirect.h"
 
 #include <functional>
 #include <string_view>
@@ -27,10 +27,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
 
-using isocpp_p1950::bad_indirect_value_access;
-using isocpp_p1950::indirect_value;
-using isocpp_p1950::make_indirect_value;
-using isocpp_p1950::allocate_indirect_value;
+using isocpp_p1950::bad_indirect_access;
+using isocpp_p1950::indirect;
+using isocpp_p1950::make_indirect;
+using isocpp_p1950::allocate_indirect;
 
 // Helper function to write unit tests for self assign.
 // Compiler emit the warnings -Wself-assign-overload and -Wself-move
@@ -40,9 +40,9 @@ void SelfAssign(T& t, U&& u) {
   t = std::forward<U>(u);
 }
 
-TEST_CASE("Ensure that indirect_value uses the minimum space requirements",
-          "[indirect_value.sizeof]") {
-  STATIC_REQUIRE(sizeof(indirect_value<int>) == sizeof(int*));
+TEST_CASE("Ensure that indirect uses the minimum space requirements",
+          "[indirect.sizeof]") {
+  STATIC_REQUIRE(sizeof(indirect<int>) == sizeof(int*));
 
   struct CopyDeleteHybrid {  // Same type for copy and delete
     void operator()(int* p) { delete p; }
@@ -50,7 +50,7 @@ TEST_CASE("Ensure that indirect_value uses the minimum space requirements",
   };
 
   STATIC_REQUIRE(
-      sizeof(indirect_value<int, CopyDeleteHybrid, CopyDeleteHybrid>) ==
+      sizeof(indirect<int, CopyDeleteHybrid, CopyDeleteHybrid>) ==
       sizeof(int*));
 }
 
@@ -74,12 +74,12 @@ class delete_counter {
   inline static size_t call_count = 0;
 };
 
-TEST_CASE("Default construction for indirect_value", "[constructor.default]") {
-  GIVEN("An indirect_value value")  // The ability to track internal copies and
+TEST_CASE("Default construction for indirect", "[constructor.default]") {
+  GIVEN("An indirect value")  // The ability to track internal copies and
                                     // deletes of the default constructor")
   {
     WHEN("Default-constructed") {
-      indirect_value<int, copy_counter<int>, delete_counter<int>> a{};
+      indirect<int, copy_counter<int>, delete_counter<int>> a{};
       REQUIRE(a.operator->() == nullptr);
 
       THEN("Ensure no copies or deletes occur") {
@@ -89,23 +89,23 @@ TEST_CASE("Default construction for indirect_value", "[constructor.default]") {
     }
     WHEN("The default-constructed value is destroyed") {
       THEN("Ensure no delete operation occurs") {
-        // Expect a delete not to occur on destruction as the indirect_value was
+        // Expect a delete not to occur on destruction as the indirect was
         // default initialised
         REQUIRE(copy_counter<int>::call_count == 0);
         CHECK(delete_counter<int>::call_count == 0);
       }
     }
   }
-  GIVEN("An indirect_value value")  //"The ability to track internal copies and
+  GIVEN("An indirect value")  //"The ability to track internal copies and
                                     // deletes of the default constructor")
   {
     WHEN(
-        "We create a default constructed indirect_value then copy assign it to "
+        "We create a default constructed indirect then copy assign it to "
         "an in-place-constructed "
-        "indirect_value") {
-      indirect_value<int, copy_counter<int>, delete_counter<int>> a{};
+        "indirect") {
+      indirect<int, copy_counter<int>, delete_counter<int>> a{};
       constexpr int b_value = 10;
-      indirect_value<int, copy_counter<int>, delete_counter<int>> b{
+      indirect<int, copy_counter<int>, delete_counter<int>> b{
           std::in_place, b_value};
       REQUIRE(a.operator->() == nullptr);
       REQUIRE(b.operator->() != nullptr);
@@ -119,7 +119,7 @@ TEST_CASE("Default construction for indirect_value", "[constructor.default]") {
     }
     WHEN("The value is destroyed") {
       THEN("Ensure a delete operation occurs") {
-        // Expect both indirect_value object to be deleted on destruction .
+        // Expect both indirect object to be deleted on destruction .
         REQUIRE(copy_counter<int>::call_count == 1);
         CHECK(delete_counter<int>::call_count == 2);
       }
@@ -127,7 +127,7 @@ TEST_CASE("Default construction for indirect_value", "[constructor.default]") {
   }
 }
 
-TEST_CASE("Element wise initialisation construction for indirect_value",
+TEST_CASE("Element wise initialisation construction for indirect",
           "[constructor.element_wise]") {
   GIVEN("The ability to track intenal copies and deletes") {
     size_t copy_count = 0, delete_count = 0;
@@ -147,8 +147,8 @@ TEST_CASE("Element wise initialisation construction for indirect_value",
           operator()(rhs);
     };
 
-    WHEN("Constructing objects of indirect_value") {
-      indirect_value<int, decltype(copy_counter), decltype(delete_counter)> a{
+    WHEN("Constructing objects of indirect") {
+      indirect<int, decltype(copy_counter), decltype(delete_counter)> a{
           new int(0), copy_counter, delete_counter};
       REQUIRE(a.operator->() != nullptr);
 
@@ -160,21 +160,21 @@ TEST_CASE("Element wise initialisation construction for indirect_value",
       }
     }
 
-    // Ensure destruction of an indirect_value caused the value to be deleted
+    // Ensure destruction of an indirect caused the value to be deleted
     REQUIRE(copy_count == 0);
     REQUIRE(delete_count == 1);
   }
 }
 
-TEST_CASE("Copy construction for indirect_value of a primitive type",
+TEST_CASE("Copy construction for indirect of a primitive type",
           "[constructor.copy.primitive]") {
-  GIVEN("A value-initialised indirect_value value") {
+  GIVEN("A value-initialised indirect value") {
     constexpr int a_value = 5;
-    indirect_value<int> a{std::in_place, a_value};
+    indirect<int> a{std::in_place, a_value};
     REQUIRE(*a == a_value);
 
-    WHEN("Taking a copy of the value-initialised indirect_value value") {
-      indirect_value<int> copy_of_a{a};
+    WHEN("Taking a copy of the value-initialised indirect value") {
+      indirect<int> copy_of_a{a};
       THEN("The copy is a deep copy of the original value") {
         REQUIRE(*copy_of_a == a_value);
         REQUIRE(a.operator->() != nullptr);
@@ -185,15 +185,15 @@ TEST_CASE("Copy construction for indirect_value of a primitive type",
   }
 }
 
-TEST_CASE("Copy assignment for indirect_value of a primitive type",
+TEST_CASE("Copy assignment for indirect of a primitive type",
           "[assignment.copy.primitive]") {
-  GIVEN("A value-initialised indirect_value value") {
+  GIVEN("A value-initialised indirect value") {
     constexpr int a_value = 5;
-    indirect_value<int> a{std::in_place, a_value};
+    indirect<int> a{std::in_place, a_value};
     REQUIRE(*a == a_value);
 
-    WHEN("Assigning a copy into a default-initalised indirect_value value") {
-      indirect_value<int> b{};
+    WHEN("Assigning a copy into a default-initalised indirect value") {
+      indirect<int> b{};
       REQUIRE(b.operator->() == nullptr);
 
       THEN("The assigned to object makes a deep copy of the orginal value") {
@@ -204,9 +204,9 @@ TEST_CASE("Copy assignment for indirect_value of a primitive type",
         REQUIRE(b.operator->() != a.operator->());
       }
     }
-    WHEN("Assigning a copy into a value-initalised indirect_value value") {
+    WHEN("Assigning a copy into a value-initalised indirect value") {
       constexpr int b_value = 10;
-      indirect_value<int> b{std::in_place, b_value};
+      indirect<int> b{std::in_place, b_value};
       REQUIRE(*b == b_value);
 
       THEN("The assigned to object makes a deep copy of the original value") {
@@ -217,9 +217,9 @@ TEST_CASE("Copy assignment for indirect_value of a primitive type",
         REQUIRE(b.operator->() != a.operator->());
       }
     }
-    WHEN("Assigning a copy into a pointer-initalised indirect_value value") {
+    WHEN("Assigning a copy into a pointer-initalised indirect value") {
       constexpr int b_value = 10;
-      indirect_value<int> b{new int(b_value)};
+      indirect<int> b{new int(b_value)};
       REQUIRE(*b == b_value);
 
       THEN("The assigned to object makes a deep copy of the original value") {
@@ -233,15 +233,15 @@ TEST_CASE("Copy assignment for indirect_value of a primitive type",
   }
 }
 
-TEST_CASE("Move construction for indirect_value of a primitive type",
+TEST_CASE("Move construction for indirect of a primitive type",
           "[constructor.move.primitive]") {
-  GIVEN("A value-initalised indirect_value value") {
+  GIVEN("A value-initalised indirect value") {
     constexpr int a_value = 5;
-    indirect_value<int> a{std::in_place, a_value};
+    indirect<int> a{std::in_place, a_value};
 
     WHEN("Constucting a new object via moving the orignal value") {
       int const* const location_of_a = a.operator->();
-      indirect_value<int> b{std::move(a)};
+      indirect<int> b{std::move(a)};
 
       THEN(
           "The constructed object steals the contents of original value "
@@ -254,16 +254,16 @@ TEST_CASE("Move construction for indirect_value of a primitive type",
   }
 }
 
-TEST_CASE("Move assignment for indirect_value of a primitive type",
+TEST_CASE("Move assignment for indirect of a primitive type",
           "[assignment.move.primitive]") {
-  GIVEN("A two value-initialised indirect_value values") {
+  GIVEN("A two value-initialised indirect values") {
     constexpr int a_value = 5;
     constexpr int b_value = 10;
-    indirect_value<int> a{std::in_place, a_value};
-    indirect_value<int> b{std::in_place, b_value};
+    indirect<int> a{std::in_place, a_value};
+    indirect<int> b{std::in_place, b_value};
 
     WHEN(
-        "The contents of the second indirect_value is move assigned to the "
+        "The contents of the second indirect is move assigned to the "
         "first") {
       int const* const location_of_b = b.operator->();
       a = std::move(b);
@@ -279,9 +279,9 @@ TEST_CASE("Move assignment for indirect_value of a primitive type",
   }
 }
 
-TEST_CASE("Operator bool for indirect_value", "[operator.bool]") {
-  GIVEN("A default-initalised indirect_value value") {
-    indirect_value<int> a;
+TEST_CASE("Operator bool for indirect", "[operator.bool]") {
+  GIVEN("A default-initalised indirect value") {
+    indirect<int> a;
 
     WHEN(
         "We expect the operator bool to return false as the internal pointer "
@@ -293,16 +293,16 @@ TEST_CASE("Operator bool for indirect_value", "[operator.bool]") {
           "Then when it is assigned a valid value for operator bool should "
           "return true") {
         constexpr int b_value = 10;
-        a = indirect_value<int>{std::in_place, b_value};
+        a = indirect<int>{std::in_place, b_value};
         REQUIRE(a.operator->() != nullptr);
         REQUIRE(*a == b_value);
         REQUIRE(a);
       }
     }
   }
-  GIVEN("A pointer-initialised indirect_value value") {
+  GIVEN("A pointer-initialised indirect value") {
     constexpr int value_a = 7;
-    indirect_value<int> a{new int(value_a)};
+    indirect<int> a{new int(value_a)};
 
     WHEN(
         "We expect the operator bool to return true as the internal pointer "
@@ -313,7 +313,7 @@ TEST_CASE("Operator bool for indirect_value", "[operator.bool]") {
       THEN(
           "Then when it is assigned a default state value for operator bool "
           "should return false") {
-        a = indirect_value<int>{};
+        a = indirect<int>{};
         REQUIRE(a.operator->() == nullptr);
         REQUIRE_FALSE(a);
       }
@@ -321,56 +321,56 @@ TEST_CASE("Operator bool for indirect_value", "[operator.bool]") {
   }
 }
 
-TEST_CASE("Swap overload for indirect_value", "[swap.primitive]") {
+TEST_CASE("Swap overload for indirect", "[swap.primitive]") {
   GIVEN(
-      "A two value-initialised indirect_value values utilising the empty "
+      "A two value-initialised indirect values utilising the empty "
       "base-class optimisation") {
     constexpr int a_value = 5;
     constexpr int b_value = 10;
-    indirect_value<int> a{std::in_place, a_value};
-    indirect_value<int> b{std::in_place, b_value};
+    indirect<int> a{std::in_place, a_value};
+    indirect<int> b{std::in_place, b_value};
 
     WHEN("The contents are swap") {
       swap(a, b);
 
-      THEN("The contents of the indirect_value should be moved") {
+      THEN("The contents of the indirect should be moved") {
         REQUIRE(*a == b_value);
         REQUIRE(*b == a_value);
       }
     }
   }
   GIVEN(
-      "A two value-initialised indirect_value values not using the empty "
+      "A two value-initialised indirect values not using the empty "
       "base-class optimisation") {
     auto default_copy_lambda_a = [](int original) { return new int(original); };
     auto default_copy_lambda_b = [](int original) { return new int(original); };
 
     constexpr int a_value = 5;
     constexpr int b_value = 10;
-    indirect_value<int, decltype(+default_copy_lambda_a),
+    indirect<int, decltype(+default_copy_lambda_a),
                    std::default_delete<int>>
         a{new int(a_value), default_copy_lambda_a};
-    indirect_value<int, decltype(+default_copy_lambda_b),
+    indirect<int, decltype(+default_copy_lambda_b),
                    std::default_delete<int>>
         b{new int(b_value), default_copy_lambda_b};
 
     THEN(
         "Confirm sized base class is used and its size requirements meet our "
         "expectations") {
-      STATIC_REQUIRE(sizeof(decltype(a)) != sizeof(indirect_value<int>));
-      STATIC_REQUIRE(sizeof(decltype(b)) != sizeof(indirect_value<int>));
+      STATIC_REQUIRE(sizeof(decltype(a)) != sizeof(indirect<int>));
+      STATIC_REQUIRE(sizeof(decltype(b)) != sizeof(indirect<int>));
       STATIC_REQUIRE(sizeof(decltype(a)) ==
-                     (sizeof(indirect_value<int>) +
+                     (sizeof(indirect<int>) +
                       sizeof(decltype(+default_copy_lambda_a))));
       STATIC_REQUIRE(sizeof(decltype(b)) ==
-                     (sizeof(indirect_value<int>) +
+                     (sizeof(indirect<int>) +
                       sizeof(decltype(+default_copy_lambda_b))));
     }
 
     WHEN("The contents are swapped") {
       swap(a, b);
 
-      THEN("The contents of the indirect_value should be moved") {
+      THEN("The contents of the indirect should be moved") {
         REQUIRE(*a == b_value);
         REQUIRE(*b == a_value);
       }
@@ -378,9 +378,9 @@ TEST_CASE("Swap overload for indirect_value", "[swap.primitive]") {
   }
 }
 
-TEMPLATE_TEST_CASE("Noexcept of observers", "[TODO]", indirect_value<int>&,
-                   const indirect_value<int>&, indirect_value<int>&&,
-                   const indirect_value<int>&&) {
+TEMPLATE_TEST_CASE("Noexcept of observers", "[TODO]", indirect<int>&,
+                   const indirect<int>&, indirect<int>&&,
+                   const indirect<int>&&) {
   using T = TestType;
   STATIC_REQUIRE(noexcept(std::declval<T>().operator->()));
   STATIC_REQUIRE(noexcept(std::declval<T>().operator*()));
@@ -410,8 +410,8 @@ inline constexpr bool same_const_and_ref_qualifiers =
     same_ref_qualifiers<T, U>&& same_const_qualifiers<T, U>;
 
 TEMPLATE_TEST_CASE("Ref- and const-qualifier of observers", "[TODO]",
-                   indirect_value<int>&, const indirect_value<int>&,
-                   indirect_value<int>&&, const indirect_value<int>&&) {
+                   indirect<int>&, const indirect<int>&,
+                   indirect<int>&&, const indirect<int>&&) {
   using T = TestType;
 
   STATIC_REQUIRE(
@@ -428,9 +428,9 @@ TEMPLATE_TEST_CASE("Ref- and const-qualifier of observers", "[TODO]",
       same_const_qualifiers<T, decltype(std::declval<T>().get_deleter())>);
 }
 
-TEST_CASE("Test properties of bad_indirect_value_access", "[TODO]") {
-  bad_indirect_value_access ex;
-  // check that we can throw a bad_indirect_value_access and catch
+TEST_CASE("Test properties of bad_indirect_access", "[TODO]") {
+  bad_indirect_access ex;
+  // check that we can throw a bad_indirect_access and catch
   // it as const std::exception&.
   try {
     throw ex;
@@ -441,34 +441,34 @@ TEST_CASE("Test properties of bad_indirect_value_access", "[TODO]") {
     REQUIRE(what.size() > 0);
   }
 
-  STATIC_REQUIRE(std::is_base_of_v<std::exception, bad_indirect_value_access>);
+  STATIC_REQUIRE(std::is_base_of_v<std::exception, bad_indirect_access>);
   STATIC_REQUIRE(
-      std::is_nothrow_default_constructible_v<bad_indirect_value_access>);
+      std::is_nothrow_default_constructible_v<bad_indirect_access>);
   STATIC_REQUIRE(
-      std::is_nothrow_copy_constructible_v<bad_indirect_value_access>);
+      std::is_nothrow_copy_constructible_v<bad_indirect_access>);
   STATIC_REQUIRE(noexcept(ex.what()));
 }
 
-TEMPLATE_TEST_CASE("Calling value on empty indirect_value will throw",
-                   "[indirect_value.access]",
-                   indirect_value<int>&, const indirect_value<int>&,
-                   indirect_value<int>&&, const indirect_value<int>&&) {
-  GIVEN("An empty indirect_value") {
+TEMPLATE_TEST_CASE("Calling value on empty indirect will throw",
+                   "[indirect.access]",
+                   indirect<int>&, const indirect<int>&,
+                   indirect<int>&&, const indirect<int>&&) {
+  GIVEN("An empty indirect") {
     std::remove_reference_t<TestType> iv;
     THEN("Calling value will throw") {
       REQUIRE(!iv.has_value());
       REQUIRE_THROWS_AS(std::forward<TestType>(iv).value(),
-                        bad_indirect_value_access);
+                        bad_indirect_access);
     }
   }
 }
 
 TEMPLATE_TEST_CASE(
-    "Calling value on an enganged indirect_value will not throw",
-    "[indirect_value.access.no_exceptions]",
-    indirect_value<int>&, const indirect_value<int>&, indirect_value<int>&&,
-    const indirect_value<int>&&) {
-  GIVEN("An enganged indirect_value") {
+    "Calling value on an enganged indirect will not throw",
+    "[indirect.access.no_exceptions]",
+    indirect<int>&, const indirect<int>&, indirect<int>&&,
+    const indirect<int>&&) {
+  GIVEN("An enganged indirect") {
     std::remove_reference_t<TestType> iv(std::in_place, 44);
     THEN("Calling value will not throw") {
       REQUIRE(std::forward<TestType>(iv).has_value());
@@ -478,7 +478,7 @@ TEMPLATE_TEST_CASE(
 }
 
 TEST_CASE("get_copier returns modifiable lvalue reference", "[TODO]") {
-  GIVEN("An lvalue of indirect_value with a modifiable copier") {
+  GIVEN("An lvalue of indirect with a modifiable copier") {
     struct Copier {
       using deleter_type = std::default_delete<int>;
       std::string name;
@@ -488,7 +488,7 @@ TEST_CASE("get_copier returns modifiable lvalue reference", "[TODO]") {
       }
     };
 
-    indirect_value<int, Copier> iv(std::in_place, 10);
+    indirect<int, Copier> iv(std::in_place, 10);
     THEN("Modifying the copier will be observable") {
       iv.get_copier().name = "Modified";
       REQUIRE(iv.get_copier().name == "Modified");
@@ -498,7 +498,7 @@ TEST_CASE("get_copier returns modifiable lvalue reference", "[TODO]") {
 }
 
 TEST_CASE("get_deleter returns modifiable lvalue reference", "[TODO]") {
-  GIVEN("An lvalue of indirect_value with a modifiable deleter") {
+  GIVEN("An lvalue of indirect with a modifiable deleter") {
     struct Deleter {
       std::string name;
       void operator()(int* p) const {
@@ -507,7 +507,7 @@ TEST_CASE("get_deleter returns modifiable lvalue reference", "[TODO]") {
       }
     };
 
-    indirect_value<int, isocpp_p1950::default_copy<int>, Deleter> iv(
+    indirect<int, isocpp_p1950::default_copy<int>, Deleter> iv(
         std::in_place, 10);
     THEN("Modifying the deleter will be observable") {
       iv.get_deleter().name = "Modified";
@@ -571,7 +571,7 @@ struct EmptyYes_FinalYes final : stats {};
 
 template <class C, class D>
 void TestCopyAndDeleteStats() {
-  using IV = indirect_value<int, C, D>;
+  using IV = indirect<int, C, D>;
 
   // Tests with an empty IV
 
@@ -848,31 +848,31 @@ TEST_CASE("Stats of copy and delete type", "[TODO]") {
 }
 
 TEST_CASE("Protection against reentrancy", "[TODO]") {
-  // There are currently three situations in which an engaged indirect_value
+  // There are currently three situations in which an engaged indirect
   // will destory its held value:
   // 1. Copy assignment operator
   // 2. Move assignment operator
   // 3. Destructor
   // This test ensures that when these functions invoke the
-  // destructor of the held value, the indirect_value will already
+  // destructor of the held value, the indirect will already
   // be set to null.
 
   struct Reentrance {
-    indirect_value<Reentrance>* backReference{};
+    indirect<Reentrance>* backReference{};
     ~Reentrance() { REQUIRE(backReference->has_value() == false); }
   };
 
   // Test the destructor.
   {
-    indirect_value<Reentrance> iv(std::in_place);
+    indirect<Reentrance> iv(std::in_place);
     iv->backReference = &iv;
   }
 
   // Test the copy-assignment operator (and destructor).
   {
-    indirect_value<Reentrance> iv(std::in_place);
+    indirect<Reentrance> iv(std::in_place);
     iv->backReference = &iv;
-    indirect_value<Reentrance> copyAssigned(std::in_place);
+    indirect<Reentrance> copyAssigned(std::in_place);
     copyAssigned->backReference = &copyAssigned;
     copyAssigned = iv;
     copyAssigned->backReference = &copyAssigned;
@@ -880,19 +880,19 @@ TEST_CASE("Protection against reentrancy", "[TODO]") {
 
   // Test the move-assignment operator (and destructor).
   {
-    indirect_value<Reentrance> iv(std::in_place);
+    indirect<Reentrance> iv(std::in_place);
     iv->backReference = &iv;
-    indirect_value<Reentrance> moveAssigned(std::in_place);
+    indirect<Reentrance> moveAssigned(std::in_place);
     moveAssigned->backReference = &moveAssigned;
     moveAssigned = std::move(iv);
     moveAssigned->backReference = &moveAssigned;
   }
 }
 
-TEST_CASE("Self assign an indirect_value", "[TODO]") {
+TEST_CASE("Self assign an indirect", "[TODO]") {
   {
     stats::reset();
-    indirect_value<int, stats, stats> empty;
+    indirect<int, stats, stats> empty;
     SelfAssign(empty, empty);
     REQUIRE(!empty);
     SelfAssign(empty, std::move(empty));
@@ -903,7 +903,7 @@ TEST_CASE("Self assign an indirect_value", "[TODO]") {
 
   {
     stats::reset();
-    indirect_value<int, stats, stats> engaged(std::in_place, 34);
+    indirect<int, stats, stats> engaged(std::in_place, 34);
     SelfAssign(engaged, engaged);
     REQUIRE(engaged);
     REQUIRE(*engaged == 34);
@@ -931,14 +931,14 @@ struct DeleteWithID : std::default_delete<CopyConstructorThrows> {
 };
 
 TEST_CASE("Throwing copy constructor", "[TODO]") {
-  GIVEN("Two engaged indirect_value values") {
-    indirect_value<CopyConstructorThrows, CopyWithID, DeleteWithID> iv(
+  GIVEN("Two engaged indirect values") {
+    indirect<CopyConstructorThrows, CopyWithID, DeleteWithID> iv(
         std::in_place);
     iv->id = 1;
     iv.get_copier().id = 10;
     iv.get_deleter().id = 100;
 
-    indirect_value<CopyConstructorThrows, CopyWithID, DeleteWithID> other(
+    indirect<CopyConstructorThrows, CopyWithID, DeleteWithID> other(
         std::in_place);
     other->id = 2;
     other.get_copier().id = 20;
@@ -978,20 +978,20 @@ struct isocpp_p1950::copier_traits<CopierWithCallback> {
 };
 
 TEST_CASE("Use source copier when copying", "[TODO]") {
-  GIVEN("An engaged indirect_value with CopierWithCallback") {
-    indirect_value<int, CopierWithCallback> engagedSource(std::in_place);
+  GIVEN("An engaged indirect with CopierWithCallback") {
+    indirect<int, CopierWithCallback> engagedSource(std::in_place);
     int copyCounter = 0;
     engagedSource.get_copier().callback = [&copyCounter]() mutable {
       ++copyCounter;
     };
     THEN("Coping will call engagedSources copier") {
       REQUIRE(copyCounter == 0);
-      indirect_value<int, CopierWithCallback> copy(engagedSource);
+      indirect<int, CopierWithCallback> copy(engagedSource);
       REQUIRE(copyCounter == 1);
-      indirect_value<int, CopierWithCallback> emptyAssignee;
+      indirect<int, CopierWithCallback> emptyAssignee;
       emptyAssignee = engagedSource;
       REQUIRE(copyCounter == 2);
-      indirect_value<int, CopierWithCallback> engagedAssignee(std::in_place);
+      indirect<int, CopierWithCallback> engagedAssignee(std::in_place);
       engagedAssignee = engagedSource;
       REQUIRE(copyCounter == 3);
     }
@@ -1000,7 +1000,7 @@ TEST_CASE("Use source copier when copying", "[TODO]") {
 
 TEST_CASE("Working with an incomplete type", "[completeness.of.t]") {
   class Incomplete;
-  using IV = indirect_value<Incomplete>;
+  using IV = indirect<Incomplete>;
 
   // Don't execute this code. Just force the compiler to compile it,
   // to see that it works with an incomplete type.
@@ -1083,7 +1083,7 @@ struct CompositeType {
 };
 size_t CompositeType::object_count = 0;
 
-TEST_CASE("Allocator used to construct with allocate_indirect_value ") {
+TEST_CASE("Allocator used to construct with allocate_indirect ") {
   
   GIVEN("an alloator which tracks allocations") {
     unsigned allocs = 0;
@@ -1093,7 +1093,7 @@ TEST_CASE("Allocator used to construct with allocate_indirect_value ") {
     WHEN("Constructing a type from the allocator")
     {
       unsigned const value = 99;
-      auto p = allocate_indirect_value<CompositeType>(
+      auto p = allocate_indirect<CompositeType>(
           std::allocator_arg_t{}, alloc, value);
       THEN("Expect the allocation to be tracked")
       {
@@ -1102,7 +1102,7 @@ TEST_CASE("Allocator used to construct with allocate_indirect_value ") {
       }
       AND_THEN("Expect the deallocation to be tracked")
       {
-        p.~indirect_value();
+        p.~indirect();
         CHECK(allocs == 1);
         CHECK(deallocs == 1);
       }
@@ -1114,7 +1114,7 @@ TEST_CASE("Allocator used to construct with allocate_indirect_value ") {
         ThrowOnConstruction() { throw "I throw in my default constructor";}
       };
 
-      CHECK_THROWS(allocate_indirect_value<ThrowOnConstruction>(
+      CHECK_THROWS(allocate_indirect<ThrowOnConstruction>(
                        std::allocator_arg_t{}, alloc));
       AND_THEN("Expect allocation and subsequent deallocation to be tracked after the throw")
       {
@@ -1125,10 +1125,10 @@ TEST_CASE("Allocator used to construct with allocate_indirect_value ") {
   }
 }
 
-TEST_CASE("Relational operators between two indirect_values", "[TODO]") {
-  GIVEN("Two empty indirect_value values") {
-    const indirect_value<int> a;
-    const indirect_value<int> b;
+TEST_CASE("Relational operators between two indirects", "[TODO]") {
+  GIVEN("Two empty indirect values") {
+    const indirect<int> a;
+    const indirect<int> b;
 
     THEN("The values should be equal") {
       REQUIRE(a == b);
@@ -1140,9 +1140,9 @@ TEST_CASE("Relational operators between two indirect_values", "[TODO]") {
     }
   }
 
-  GIVEN("One non-empty and one empty indirect_value") {
-    const indirect_value<int> nonEmpty = make_indirect_value<int>(0);
-    const indirect_value<int> empty;
+  GIVEN("One non-empty and one empty indirect") {
+    const indirect<int> nonEmpty = make_indirect<int>(0);
+    const indirect<int> empty;
 
     THEN("The values should be unequal") {
       REQUIRE(!(nonEmpty == empty));
@@ -1154,9 +1154,9 @@ TEST_CASE("Relational operators between two indirect_values", "[TODO]") {
     }
   }
 
-  GIVEN("Two non-empty indirect_value values with equal values") {
-    const indirect_value<int> a = make_indirect_value<int>(0);
-    const indirect_value<int> b = make_indirect_value<int>(0);
+  GIVEN("Two non-empty indirect values with equal values") {
+    const indirect<int> a = make_indirect<int>(0);
+    const indirect<int> b = make_indirect<int>(0);
     THEN("The values should be equal") {
       REQUIRE(a == b);
       REQUIRE(!(a != b));
@@ -1167,9 +1167,9 @@ TEST_CASE("Relational operators between two indirect_values", "[TODO]") {
     }
   }
 
-  GIVEN("Two non-empty indirect_value values with different values") {
-    const indirect_value<int> a = make_indirect_value<int>(0);
-    const indirect_value<int> b = make_indirect_value<int>(1);
+  GIVEN("Two non-empty indirect values with different values") {
+    const indirect<int> a = make_indirect<int>(0);
+    const indirect<int> b = make_indirect<int>(1);
     THEN("a should be less than b") {
       REQUIRE(!(a == b));
       REQUIRE(a != b);
@@ -1181,11 +1181,11 @@ TEST_CASE("Relational operators between two indirect_values", "[TODO]") {
   }
 }
 
-TEST_CASE("Relational operators between two indirect_values of different type",
+TEST_CASE("Relational operators between two indirects of different type",
           "[TODO]") {
-  GIVEN("Two empty indirect_value values") {
-    const indirect_value<int> a;
-    const indirect_value<short> b;
+  GIVEN("Two empty indirect values") {
+    const indirect<int> a;
+    const indirect<short> b;
 
     THEN("The values should be equal") {
       REQUIRE(a == b);
@@ -1197,9 +1197,9 @@ TEST_CASE("Relational operators between two indirect_values of different type",
     }
   }
 
-  GIVEN("One non-empty and one empty indirect_value") {
-    const indirect_value<int> nonEmpty(std::in_place, 0);
-    const indirect_value<short> empty;
+  GIVEN("One non-empty and one empty indirect") {
+    const indirect<int> nonEmpty(std::in_place, 0);
+    const indirect<short> empty;
 
     THEN("The values should be unequal") {
       REQUIRE(!(nonEmpty == empty));
@@ -1211,9 +1211,9 @@ TEST_CASE("Relational operators between two indirect_values of different type",
     }
   }
 
-  GIVEN("Two non-empty indirect_value values with equal values") {
-    const indirect_value<int> a(std::in_place, 0);
-    const indirect_value<short> b(std::in_place, short{0});
+  GIVEN("Two non-empty indirect values with equal values") {
+    const indirect<int> a(std::in_place, 0);
+    const indirect<short> b(std::in_place, short{0});
     THEN("The values should be equal") {
       REQUIRE(a == b);
       REQUIRE(!(a != b));
@@ -1224,9 +1224,9 @@ TEST_CASE("Relational operators between two indirect_values of different type",
     }
   }
 
-  GIVEN("Two non-empty indirect_value values with different values") {
-    const indirect_value<int> a(std::in_place, 0);
-    const indirect_value<short> b(std::in_place, short{1});
+  GIVEN("Two non-empty indirect values with different values") {
+    const indirect<int> a(std::in_place, 0);
+    const indirect<short> b(std::in_place, short{1});
     THEN("a should be less than b") {
       REQUIRE(!(a == b));
       REQUIRE(a != b);
@@ -1238,10 +1238,10 @@ TEST_CASE("Relational operators between two indirect_values of different type",
   }
 }
 
-TEST_CASE("Relational operators between an indirect_value and nullptr",
+TEST_CASE("Relational operators between an indirect and nullptr",
           "[TODO]") {
-  GIVEN("An empty indirect_value") {
-    const indirect_value<int> empty;
+  GIVEN("An empty indirect") {
+    const indirect<int> empty;
 
     THEN("The value should be equal to nullptr") {
       REQUIRE(empty == nullptr);
@@ -1259,8 +1259,8 @@ TEST_CASE("Relational operators between an indirect_value and nullptr",
     }
   }
 
-  GIVEN("A non-empty indirect_value") {
-    const indirect_value<int> nonEmpty(std::in_place);
+  GIVEN("A non-empty indirect") {
+    const indirect<int> nonEmpty(std::in_place);
 
     THEN("The value should be unequal to nullptr") {
       REQUIRE(!(nonEmpty == nullptr));
@@ -1279,10 +1279,10 @@ TEST_CASE("Relational operators between an indirect_value and nullptr",
   }
 }
 
-TEST_CASE("Relational operators between indirect_value and value_type",
+TEST_CASE("Relational operators between indirect and value_type",
           "[TODO]") {
-  GIVEN("An empty indirect_value and a value_type") {
-    const indirect_value<int> empty;
+  GIVEN("An empty indirect and a value_type") {
+    const indirect<int> empty;
     const int value{};
 
     THEN("The value should be greater") {
@@ -1301,8 +1301,8 @@ TEST_CASE("Relational operators between indirect_value and value_type",
     }
   }
 
-  GIVEN("A non-empty indirect_value and a value_type with equal value") {
-    const indirect_value<int> nonEmpty(std::in_place, 0);
+  GIVEN("A non-empty indirect and a value_type with equal value") {
+    const indirect<int> nonEmpty(std::in_place, 0);
     const int value{};
 
     THEN("The value should be equal") {
@@ -1321,8 +1321,8 @@ TEST_CASE("Relational operators between indirect_value and value_type",
     }
   }
 
-  GIVEN("A non-empty indirect_value and a value_type with smaller value") {
-    const indirect_value<int> nonEmpty(std::in_place, 0);
+  GIVEN("A non-empty indirect and a value_type with smaller value") {
+    const indirect<int> nonEmpty(std::in_place, 0);
     const int value{-1};
 
     THEN("The value should be smaller") {
@@ -1343,11 +1343,11 @@ TEST_CASE("Relational operators between indirect_value and value_type",
 }
 
 TEST_CASE(
-    "Relational operators between indirect_value and value_type of different "
+    "Relational operators between indirect and value_type of different "
     "type",
     "[TODO]") {
-  GIVEN("An empty indirect_value and a value_type") {
-    const indirect_value<int> empty;
+  GIVEN("An empty indirect and a value_type") {
+    const indirect<int> empty;
     const short value{};
 
     THEN("The value should be greater") {
@@ -1366,8 +1366,8 @@ TEST_CASE(
     }
   }
 
-  GIVEN("A non-empty indirect_value and a value_type with equal value") {
-    const indirect_value<int> nonEmpty(std::in_place, 0);
+  GIVEN("A non-empty indirect and a value_type with equal value") {
+    const indirect<int> nonEmpty(std::in_place, 0);
     const short value{};
 
     THEN("The value should be equal") {
@@ -1386,8 +1386,8 @@ TEST_CASE(
     }
   }
 
-  GIVEN("A non-empty indirect_value and a value_type with smaller value") {
-    const indirect_value<int> nonEmpty(std::in_place, 0);
+  GIVEN("A non-empty indirect and a value_type with smaller value") {
+    const indirect<int> nonEmpty(std::in_place, 0);
     const short value{-1};
 
     THEN("The value should be smaller") {
@@ -1416,11 +1416,11 @@ concept Compare = requires(const T& a, const U& b) {
 };
 
 TEST_CASE(
-    "Relational operators between indirect_value and value_type of "
+    "Relational operators between indirect and value_type of "
     "non-equality-comparable type",
     "[TODO]") {
   struct NonComparable {};
-  using IV = indirect_value<NonComparable>;
+  using IV = indirect<NonComparable>;
   STATIC_REQUIRE(!Compare<IV, NonComparable, std::equal_to<>>);
   STATIC_REQUIRE(!Compare<IV, NonComparable, std::not_equal_to<>>);
   STATIC_REQUIRE(!Compare<IV, NonComparable, std::less<>>);
@@ -1453,37 +1453,37 @@ struct hash<ProvidesThrowingHash> {
 };
 }  // namespace std
 
-TEST_CASE("Hash for indirect_value", "[TODO]") {
-  GIVEN("An empty indirect_value") {
-    const indirect_value<int> empty;
+TEST_CASE("Hash for indirect", "[TODO]") {
+  GIVEN("An empty indirect") {
+    const indirect<int> empty;
 
     THEN("The hash should be zero") {
-      REQUIRE(std::hash<indirect_value<int>>{}(empty) == 0);
-      STATIC_REQUIRE(IsHashable<indirect_value<int>>::IsNoexcept);
+      REQUIRE(std::hash<indirect<int>>{}(empty) == 0);
+      STATIC_REQUIRE(IsHashable<indirect<int>>::IsNoexcept);
     }
   }
 
-  GIVEN("A non-empty indirect_value") {
-    const indirect_value<int> nonEmpty(std::in_place, 55);
+  GIVEN("A non-empty indirect") {
+    const indirect<int> nonEmpty(std::in_place, 55);
 
     THEN("The hash values should be equal") {
       const std::size_t intHash = std::hash<int>{}(*nonEmpty);
       const std::size_t indirectValueHash =
-          std::hash<indirect_value<int>>{}(nonEmpty);
+          std::hash<indirect<int>>{}(nonEmpty);
       REQUIRE(intHash == indirectValueHash);
     }
   }
 
   GIVEN("A type which is not hashable") {
     STATIC_REQUIRE(!IsHashable<ProvidesNoHash>::value);
-    STATIC_REQUIRE(!IsHashable<indirect_value<ProvidesNoHash>>::value);
+    STATIC_REQUIRE(!IsHashable<indirect<ProvidesNoHash>>::value);
   }
 
   GIVEN("A type which is hashable and std::hash throws") {
     STATIC_REQUIRE(IsHashable<ProvidesThrowingHash>::value);
-    STATIC_REQUIRE(IsHashable<indirect_value<ProvidesThrowingHash>>::value);
+    STATIC_REQUIRE(IsHashable<indirect<ProvidesThrowingHash>>::value);
     STATIC_REQUIRE(!IsHashable<ProvidesThrowingHash>::IsNoexcept);
     STATIC_REQUIRE(
-        !IsHashable<indirect_value<ProvidesThrowingHash>>::IsNoexcept);
+        !IsHashable<indirect<ProvidesThrowingHash>>::IsNoexcept);
   }
 }
