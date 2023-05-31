@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 cmake_policy(SET CMP0127 NEW)
 
 if(NOT DEFINED PROJECT_NAME)
-    set(CPP_INDIRECT_IS_SUBPROJECT ON)
+    set(CPP_INDIRECT_IS_NOT_SUBPROJECT ON)
 endif()
 
 set(CPP_INDIRECT_VERSION 0.0.1)
@@ -44,16 +44,19 @@ target_compile_features(indirect
 
 add_library(indirect::indirect ALIAS indirect)
 
-if (${CPP_INDIRECT_IS_SUBPROJECT})
+if (${CPP_INDIRECT_IS_NOT_SUBPROJECT})
 
     if (${BUILD_TESTING})
         FetchContent_Declare(
             catch2
             GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-            GIT_TAG v2.13.10
+            GIT_TAG v3.3.2
         )
 
-        FetchContent_GetProperties(catch2)
+        # TODO(Avoid gloablly setting C++ standard) Force C++17 for Catchv2
+        # Fix for: https://stackoverflow.com/questions/66227246/catch2-undefined-reference-to-catchstringmaker
+        set(CMAKE_CXX_STANDARD 17)
+
         if(NOT catch2_POPULATED)
             FetchContent_Populate(catch2)
             add_subdirectory(${catch2_SOURCE_DIR} ${catch2_BINARY_DIR})
@@ -71,7 +74,7 @@ if (${CPP_INDIRECT_IS_SUBPROJECT})
         target_link_libraries(indirect_test
             PRIVATE
                 indirect::indirect
-                Catch2::Catch2
+                Catch2::Catch2WithMain
         )
 
         target_compile_options(indirect_test
