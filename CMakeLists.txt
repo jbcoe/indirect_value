@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 cmake_policy(SET CMP0127 NEW)
 
 if(NOT DEFINED PROJECT_NAME)
-    set(CPP_INDIRECT_IS_SUBPROJECT ON)
+    set(CPP_INDIRECT_IS_NOT_SUBPROJECT ON)
 endif()
 
 # TODO(Avoid gloablly setting C++ standard) Force C++17 for Catchv2
@@ -48,7 +48,7 @@ target_compile_features(indirect_value
 
 add_library(indirect_value::indirect_value ALIAS indirect_value)
 
-if (${CPP_INDIRECT_IS_SUBPROJECT})
+if (${CPP_INDIRECT_IS_NOT_SUBPROJECT})
 
     if (${BUILD_TESTING})
         FetchContent_Declare(
