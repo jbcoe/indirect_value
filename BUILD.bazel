@@ -12,7 +12,7 @@ cc_test(
     copts = ["-Iexternal/indirect_value/"],
     deps = [
         ":indirect_value",
-        "@catch2",
+        "@catch2//:catch2_main",
     ],
 )
 
@@ -27,6 +27,6 @@ cc_test(
     defines = ["CATCH_CONFIG_MAIN"],
     deps = [
         ":indirect_value",
-        "@catch2",
+        "@catch2//:catch2_main",
     ],
 )

@@ -20,7 +20,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "pimpl.h"
 
-#include "catch2/catch.hpp"
+#include "catch2/catch_test_macros.hpp"
 
 TEST_CASE(
     "Basic life time operations of a pimpl now work for free via "
