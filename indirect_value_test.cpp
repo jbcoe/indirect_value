@@ -24,8 +24,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <string_view>
 #include <type_traits>
 
-#define CATCH_CONFIG_MAIN
-#include "catch2/catch.hpp"
+#include "catch2/catch_test_macros.hpp"
+#include "catch2/catch_template_test_macros.hpp"
 
 using isocpp_p1950::bad_indirect_value_access;
 using isocpp_p1950::indirect_value;
