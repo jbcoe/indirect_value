@@ -5,10 +5,6 @@ if(NOT DEFINED PROJECT_NAME)
     set(CPP_INDIRECT_IS_NOT_SUBPROJECT ON)
 endif()
 
-# TODO(Avoid gloablly setting C++ standard) Force C++17 for Catchv2
-# Fix for: https://stackoverflow.com/questions/66227246/catch2-undefined-reference-to-catchstringmaker
-set(CMAKE_CXX_STANDARD 17)
-
 set(CPP_INDIRECT_VALUE_VERSION 0.0.1)
 
 project(indirect_value LANGUAGES CXX VERSION ${CPP_INDIRECT_VALUE_VERSION})
@@ -57,7 +53,10 @@ if (${CPP_INDIRECT_IS_NOT_SUBPROJECT})
             GIT_TAG v3.3.2
         )
 
-        FetchContent_GetProperties(catch2)
+        # TODO(Avoid gloablly setting C++ standard) Force C++17 for Catchv2
+        # Fix for: https://stackoverflow.com/questions/66227246/catch2-undefined-reference-to-catchstringmaker
+        set(CMAKE_CXX_STANDARD 17)
+
         if(NOT catch2_POPULATED)
             FetchContent_Populate(catch2)
             add_subdirectory(${catch2_SOURCE_DIR} ${catch2_BINARY_DIR})
