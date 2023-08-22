@@ -179,6 +179,7 @@ if (${CPP_INDIRECT_IS_NOT_SUBPROJECT})
 
     install(
         EXPORT indirect_value-export-set
+        FILE indirect_value-target.cmake
         NAMESPACE indirect_value::
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/indirect_value"
     )
